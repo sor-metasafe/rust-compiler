@@ -81,7 +81,7 @@ optimize = true
 #static-libstdcpp = false
 
 # Whether to use Ninja to build LLVM. This runs much faster than make.
-#ninja = true
+ninja = true
 
 # LLVM targets to build support for.
 # Note: this is NOT related to Rust compilation targets. However, as Rust is

@@ -54,6 +54,9 @@ rustc_span = { path = "../rustc_span" }
 rustc_hir_analysis = { path = "../rustc_hir_analysis" }
 rustc_mir_transform = { path = "../rustc_mir_transform" }
 
+#MetaSafe
+smallvec = { version = "1.8.1", features = ["union", "may_dangle"] }
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 

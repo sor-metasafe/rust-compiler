@@ -62,6 +62,10 @@ use std::time::{Instant, SystemTime};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
+mod metaupdate;
+
+use metaupdate;
+
 #[allow(unused_macros)]
 macro do_not_use_print($($t:tt)*) {
     std::compile_error!(
@@ -382,7 +386,6 @@ fn run_compiler(
 
         let linker = compiler.enter(|queries| {
             let early_exit = || sess.compile_status().map(|_| None);
-            queries.parse()?;
 
             if let Some(ppm) = &sess.opts.pretty {
                 if ppm.needs_ast_map() {
