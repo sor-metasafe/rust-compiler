@@ -12,5 +12,6 @@ mod ast_mut_visitor;
 /// handle smart pointer housing structs... Hmmm :(
 pub struct MetaUpdateCallbacks {
     analysis_done: bool,
-    astid2hirid_map: FxHashMap<NodeId, HirId>
+    node_id_to_hir_id: FxHashMap<NodeId, HirId>,
+    next_node_id: NodeId
 }
