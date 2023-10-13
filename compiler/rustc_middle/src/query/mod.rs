@@ -243,6 +243,22 @@ rustc_queries! {
         feedable
     }
 
+    /// Whether the given type is a smart pointer. For now, a smart pointer is any struct that implements the
+    /// MetaUpdate trait as explained by the MetaUpdate paper.
+    /// This can be extended to trait objects is needed.
+    /// Ofcourse, if a type does not implement MetaUpdate by has all its
+    /// fields smart pointers, we inherently consider it a smart pointer.
+    query is_smart_pointer(key: ty::Ty<'tcx>) -> bool {
+        desc { "whether a given type is special or not"}
+        separate_provide_extern
+    }
+
+    /// Returns the DefId of the MetaUpdate trait explained in the MetaSafe paper
+    query metasafe_metaupdate_trait_id(_:()) -> Option<DefId> {
+        desc {"return the DefId of the MetaUpdate trait"}
+        separate_provide_extern
+    }
+
     query collect_return_position_impl_trait_in_trait_tys(key: DefId)
         -> Result<&'tcx FxHashMap<DefId, ty::EarlyBinder<Ty<'tcx>>>, ErrorGuaranteed>
     {
