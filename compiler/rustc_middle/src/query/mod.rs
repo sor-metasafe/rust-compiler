@@ -259,6 +259,13 @@ rustc_queries! {
         separate_provide_extern
     }
 
+    /// If a given type is not a smart pointer, this query is used to determine whether such 
+    /// a type contains at least one smart pointer.
+    query contains_smart_pointer(key: ty::Ty<'tcx>) -> bool {
+        desc { "whether a given type contains a field that is smart pointer"}
+        separate_provide_extern
+    }
+
     query collect_return_position_impl_trait_in_trait_tys(key: DefId)
         -> Result<&'tcx FxHashMap<DefId, ty::EarlyBinder<Ty<'tcx>>>, ErrorGuaranteed>
     {

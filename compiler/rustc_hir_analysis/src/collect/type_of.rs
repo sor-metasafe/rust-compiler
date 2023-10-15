@@ -536,7 +536,9 @@ pub(super) fn is_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> boo
         }
 
         for field in adt.all_fields() {
-            if !is_smart_pointer(tcx, field.ty(tcx, arg))
+            if !is_smart_pointer(tcx, field.ty(tcx, arg)){
+                return false;
+            }
         }
     }
 
@@ -551,6 +553,19 @@ pub(super) fn metasafe_metaupdate_trait_id(tcx: TyCtxt<'_>, ():()) -> Option<Def
     }
 
     None
+}
+
+pub(super) fn contains_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> bool {
+    if let ty::Adt(adt_def, generics) = def_ty.kind() {
+        for field in adt_def.all_fields() {
+            let field_ty = field.ty(tcx, &generics);
+            if tcx.is_smart_pointer(field_ty) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 
