@@ -1,13 +1,13 @@
 use rustc_errors::{Applicability, StashKey};
 use rustc_hir as hir;
-use rustc_hir::def_id::LocalDefId;
+use rustc_hir::def_id::{LocalDefId, DefId};
 use rustc_hir::HirId;
 use rustc_middle::ty::print::with_forced_trimmed_paths;
 use rustc_middle::ty::util::IntTypeExt;
 use rustc_middle::ty::{self, ImplTraitInTraitData, IsSuggestable, Ty, TyCtxt, TypeVisitableExt, EarlyBinder};
-use rustc_span::source_map::DefId;
 use rustc_span::symbol::Ident;
 use rustc_span::{Span, DUMMY_SP};
+use rustc_type_ir::TyKind::Adt;
 
 use super::ItemCtxt;
 use super::{bad_placeholder, is_suggestable_infer_ty};
@@ -523,8 +523,8 @@ pub(super) fn is_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> boo
 
     let metaupdate_trait_id = tcx.metasafe_metaupdate_trait_id(()).unwrap();
 
-    if let Some(adt) = def_ty.ty_adt_def() {
-        let def_id = adt.did();
+    if let Adt(adt_def, generics) = def_ty.kind() {
+        let def_id = adt_def.did();
         for impl_id in tcx.all_impls(metaupdate_trait_id) {
             if let Some(trait_ref) = tcx.impl_trait_ref(impl_id).map(EarlyBinder::instantiate_identity) {
                 if let Some(adt) = trait_ref.self_ty().ty_adt_def() {
@@ -535,11 +535,13 @@ pub(super) fn is_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> boo
             }
         }
 
-        for field in adt.all_fields() {
-            if !is_smart_pointer(tcx, field.ty(tcx, arg)){
+        for field in adt_def.all_fields() {
+            if !is_smart_pointer(tcx, field.ty(tcx, &generics)) {
                 return false;
             }
         }
+
+        return true;
     }
 
     false
@@ -556,10 +558,15 @@ pub(super) fn metasafe_metaupdate_trait_id(tcx: TyCtxt<'_>, ():()) -> Option<Def
 }
 
 pub(super) fn contains_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> bool {
+
+    if tcx.is_smart_pointer(def_ty) {
+        return false;
+    }
+
     if let ty::Adt(adt_def, generics) = def_ty.kind() {
         for field in adt_def.all_fields() {
             let field_ty = field.ty(tcx, &generics);
-            if tcx.is_smart_pointer(field_ty) {
+            if tcx.is_smart_pointer(field_ty) || tcx.contains_smart_pointer(field_ty) {
                 return true;
             }
         }

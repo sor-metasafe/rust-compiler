@@ -3,7 +3,11 @@ use smallvec::SmallVec;
 
 use super::MetaUpdateCallbacks;
 
-impl MutVisitor for MetaUpdateCallbacks {
+pub struct AstMutVisitorCtxt {
+
+}
+
+impl MutVisitor for AstMutVisitorCtxt {
 
     /// It makes sense that we need to visit a crate,
     /// here we will define more items? such as new structs or is it enough to simply

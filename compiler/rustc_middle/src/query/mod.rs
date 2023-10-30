@@ -248,22 +248,19 @@ rustc_queries! {
     /// This can be extended to trait objects is needed.
     /// Ofcourse, if a type does not implement MetaUpdate by has all its
     /// fields smart pointers, we inherently consider it a smart pointer.
-    query is_smart_pointer(key: ty::Ty<'tcx>) -> bool {
+    query is_smart_pointer(_:Ty<'tcx>) -> bool {
         desc { "whether a given type is special or not"}
-        separate_provide_extern
     }
 
     /// Returns the DefId of the MetaUpdate trait explained in the MetaSafe paper
     query metasafe_metaupdate_trait_id(_:()) -> Option<DefId> {
         desc {"return the DefId of the MetaUpdate trait"}
-        separate_provide_extern
     }
 
     /// If a given type is not a smart pointer, this query is used to determine whether such 
     /// a type contains at least one smart pointer.
-    query contains_smart_pointer(key: ty::Ty<'tcx>) -> bool {
+    query contains_smart_pointer(_: Ty<'tcx>) -> bool {
         desc { "whether a given type contains a field that is smart pointer"}
-        separate_provide_extern
     }
 
     query collect_return_position_impl_trait_in_trait_tys(key: DefId)

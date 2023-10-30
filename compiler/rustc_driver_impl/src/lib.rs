@@ -19,6 +19,7 @@ extern crate tracing;
 
 pub extern crate rustc_plugin_impl as plugin;
 
+use metaupdate::hir_visitor::HirAnalysisCtxt;
 use rustc_ast as ast;
 use rustc_codegen_ssa::{traits::CodegenBackend, CodegenErrors, CodegenResults};
 use rustc_data_structures::profiling::{
@@ -208,6 +209,23 @@ impl Callbacks for TimePassesCallbacks {
         self.time_passes = (config.opts.prints.is_empty() && config.opts.unstable_opts.time_passes)
             .then(|| config.opts.unstable_opts.time_passes_format);
         config.opts.trimmed_def_paths = TrimmedDefPaths::GoodPath;
+    }
+
+    fn after_analysis<'tcx>(
+            &mut self,
+            _handler: &EarlyErrorHandler,
+            _compiler: &interface::Compiler,
+            queries: &'tcx Queries<'tcx>,
+        ) -> Compilation {
+        let mut ctxt_result = queries.global_ctxt().unwrap();
+        ctxt_result.enter(|tcx|{
+            if tcx.sess.opts.unstable_opts.metaupdate && tcx.sess.opts.unstable_opts.metaupdate_analysis {
+                let hir_analysis = HirAnalysisCtxt::new(tcx);
+                Compilation::Stop
+            }else {
+                Compilation::Continue
+            }
+        })
     }
 }
 

@@ -31,6 +31,7 @@ use crate::ty::{
     TyVid, TypeAndMut, Visibility,
 };
 use crate::ty::{GenericArg, GenericArgs, GenericArgsRef};
+use ast::NodeId;
 use rustc_ast::{self as ast, attr};
 use rustc_data_structures::fingerprint::Fingerprint;
 use rustc_data_structures::fx::{FxHashMap, FxHashSet};
@@ -565,6 +566,8 @@ pub struct GlobalCtxt<'tcx> {
     /// Caches the results of trait selection. This cache is used
     /// for things that do not have to do with the parameters in scope.
     pub selection_cache: traits::SelectionCache<'tcx>,
+    /// MetaSafe: maps HirIds back to NodeIds
+    pub hir_id_to_node_id: Lock<FxHashMap<HirId, NodeId>>,
 
     /// Caches the results of trait evaluation. This cache is used
     /// for things that do not have to do with the parameters in scope.
@@ -735,6 +738,7 @@ impl<'tcx> TyCtxt<'tcx> {
             new_solver_coherence_evaluation_cache: Default::default(),
             data_layout,
             alloc_map: Lock::new(interpret::AllocMap::new()),
+            hir_id_to_node_id: Lock::new(FxHashMap::default())
         }
     }
 
