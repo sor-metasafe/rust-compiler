@@ -19,7 +19,6 @@ extern crate tracing;
 
 pub extern crate rustc_plugin_impl as plugin;
 
-use metaupdate::hir_visitor::HirAnalysisCtxt;
 use rustc_ast as ast;
 use rustc_codegen_ssa::{traits::CodegenBackend, CodegenErrors, CodegenResults};
 use rustc_data_structures::profiling::{
@@ -64,8 +63,6 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
 mod metaupdate;
-
-use metaupdate;
 
 #[allow(unused_macros)]
 macro do_not_use_print($($t:tt)*) {
@@ -220,7 +217,7 @@ impl Callbacks for TimePassesCallbacks {
         let mut ctxt_result = queries.global_ctxt().unwrap();
         ctxt_result.enter(|tcx|{
             if tcx.sess.opts.unstable_opts.metaupdate && tcx.sess.opts.unstable_opts.metaupdate_analysis {
-                let hir_analysis = HirAnalysisCtxt::new(tcx);
+                metaupdate::hir_visitor::run_metasafe_analysis_stage(tcx);
                 Compilation::Stop
             }else {
                 Compilation::Continue

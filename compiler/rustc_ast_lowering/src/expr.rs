@@ -67,9 +67,9 @@ impl<'hir> LoweringContext<'_, 'hir> {
             }
 
             let hir_id = self.lower_node_id(e.id);
-            /// MetaSafe: record the HirID<->NodeId relationship
-            if self.tcx.sess.opts.unstable_opts && self.tcx.sess.opts.unstable_opts {
-                let map = self.tcx.hir_id_to_node_id.get_mut();
+            // MetaSafe: record the HirID<->NodeId relationship
+            if self.tcx.sess.opts.unstable_opts.metaupdate && self.tcx.sess.opts.unstable_opts.metaupdate_analysis {
+                let mut map = self.tcx.hir_id_to_node_id.borrow_mut();
                 map.insert(hir_id, e.id);
             }
             self.lower_attrs(hir_id, &e.attrs);

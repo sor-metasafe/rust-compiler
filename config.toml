@@ -226,7 +226,7 @@ ninja = true
 #
 # You can still build documentation when this is disabled by explicitly passing paths,
 # e.g. `x doc library`.
-#docs = true
+docs = false
 
 # Flag to specify whether CSS, JavaScript, and HTML are minified when
 # docs are generated. JSON is always minified, because it's enormous,
@@ -298,7 +298,7 @@ ninja = true
 # which are used to install Rust and Cargo together. This is disabled by
 # default. The `tools` option (immediately below) specifies which tools should
 # be built if `extended = true`.
-#extended = false
+extended = true
 
 # Set of tools to be included in the installation.
 #
@@ -375,7 +375,7 @@ ninja = true
 [install]
 
 # Where to install the generated toolchain. Must be an absolute path.
-#prefix = "build"
+prefix = "build"
 
 # Where to install system configuration files.
 # If this is a relative path, it will get installed in `prefix` above

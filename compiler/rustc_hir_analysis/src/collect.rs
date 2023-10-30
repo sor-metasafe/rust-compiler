@@ -56,6 +56,11 @@ pub fn provide(providers: &mut Providers) {
     resolve_bound_vars::provide(providers);
     *providers = Providers {
         type_of: type_of::type_of,
+        // MetaSafe analysis providers
+        is_smart_pointer: type_of::is_smart_pointer,
+        contains_smart_pointer: type_of::contains_smart_pointer,
+        metasafe_metaupdate_trait_id: type_of::metasafe_metaupdate_trait_id,
+        
         item_bounds: item_bounds::item_bounds,
         explicit_item_bounds: item_bounds::explicit_item_bounds,
         generics_of: generics_of::generics_of,

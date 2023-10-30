@@ -7,7 +7,7 @@ use rustc_middle::ty::util::IntTypeExt;
 use rustc_middle::ty::{self, ImplTraitInTraitData, IsSuggestable, Ty, TyCtxt, TypeVisitableExt, EarlyBinder};
 use rustc_span::symbol::Ident;
 use rustc_span::{Span, DUMMY_SP};
-use rustc_type_ir::TyKind::Adt;
+use ty::Adt;
 
 use super::ItemCtxt;
 use super::{bad_placeholder, is_suggestable_infer_ty};
