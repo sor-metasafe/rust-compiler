@@ -37,6 +37,7 @@ use crate::alloc::WriteCloneIntoRaw;
 use crate::alloc::{AllocError, Allocator, Global, Layout};
 use crate::borrow::{Cow, ToOwned};
 use crate::boxed::Box;
+use crate::metasafe::MetaUpdate;
 use crate::rc::is_dangling;
 #[cfg(not(no_global_oom_handling))]
 use crate::string::String;
@@ -254,6 +255,11 @@ pub struct Arc<
     alloc: A,
 }
 
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: ?Sized, A: Allocator> MetaUpdate for Arc<T,A> {
+
+}
+
 #[stable(feature = "rust1", since = "1.0.0")]
 unsafe impl<T: ?Sized + Sync + Send, A: Allocator + Send> Send for Arc<T, A> {}
 #[stable(feature = "rust1", since = "1.0.0")]
@@ -325,6 +331,11 @@ pub struct Weak<
     alloc: A,
 }
 
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: ?Sized, A: Allocator> MetaUpdate for Weak<T,A>{
+    
+}
+
 #[stable(feature = "arc_weak", since = "1.4.0")]
 unsafe impl<T: ?Sized + Sync + Send, A: Allocator + Send> Send for Weak<T, A> {}
 #[stable(feature = "arc_weak", since = "1.4.0")]
@@ -355,6 +366,11 @@ struct ArcInner<T: ?Sized> {
     weak: atomic::AtomicUsize,
 
     data: T,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: ?Sized> MetaUpdate for ArcInner<T> {
+
 }
 
 /// Calculate layout for `ArcInner<T>` using the inner value's layout

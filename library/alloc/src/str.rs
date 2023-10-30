@@ -16,6 +16,7 @@ use core::unicode::conversions;
 
 use crate::borrow::ToOwned;
 use crate::boxed::Box;
+use crate::metasafe::MetaUpdate;
 use crate::slice::{Concat, Join, SliceIndex};
 use crate::string::String;
 use crate::vec::Vec;
@@ -214,6 +215,11 @@ impl ToOwned for str {
         self.as_bytes().clone_into(&mut b);
         *target = unsafe { String::from_utf8_unchecked(b) }
     }
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl MetaUpdate for str {
+    
 }
 
 /// Methods for string slices.

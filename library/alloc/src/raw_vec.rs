@@ -13,6 +13,7 @@ use crate::alloc::{Allocator, Global, Layout};
 use crate::boxed::Box;
 use crate::collections::TryReserveError;
 use crate::collections::TryReserveErrorKind::*;
+use crate::metasafe::MetaUpdate;
 
 #[cfg(test)]
 mod tests;
@@ -52,6 +53,16 @@ pub(crate) struct RawVec<T, A: Allocator = Global> {
     ptr: Unique<T>,
     cap: usize,
     alloc: A,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T, A: Allocator> MetaUpdate for RawVec<T,A> {
+    /// the synchronize function: 
+    /// This should ensure ptr is valid and cap is not bigger than known 
+    /// size at allocator side
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<T> RawVec<T, Global> {

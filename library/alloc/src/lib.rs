@@ -256,6 +256,10 @@ pub mod task;
 mod tests;
 pub mod vec;
 
+#[unstable(feature = "metasafe", issue = "none")]
+/// The MetaSafe module base
+pub mod metasafe;
+
 #[doc(hidden)]
 #[unstable(feature = "liballoc_internals", issue = "none", reason = "implementation detail")]
 pub mod __export {

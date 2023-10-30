@@ -65,6 +65,7 @@ use core::str::Utf8Chunks;
 use crate::borrow::{Cow, ToOwned};
 use crate::boxed::Box;
 use crate::collections::TryReserveError;
+use crate::metasafe::MetaUpdate;
 use crate::str::{self, from_utf8_unchecked_mut, Chars, Utf8Error};
 #[cfg(not(no_global_oom_handling))]
 use crate::str::{from_boxed_utf8_unchecked, FromStr};
@@ -366,6 +367,11 @@ pub struct String {
     vec: Vec<u8>,
 }
 
+#[unstable(feature = "metasafe", issue = "none")]
+impl MetaUpdate for String {
+    
+}
+
 /// A possible error value when converting a `String` from a UTF-8 byte vector.
 ///
 /// This type is the error type for the [`from_utf8`] method on [`String`]. It
@@ -403,6 +409,11 @@ pub struct String {
 pub struct FromUtf8Error {
     bytes: Vec<u8>,
     error: Utf8Error,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl MetaUpdate for FromUtf8Error {
+
 }
 
 /// A possible error value when converting a `String` from a UTF-16 byte slice.
@@ -2842,6 +2853,11 @@ pub struct Drain<'a> {
     end: usize,
     /// Current remaining range to remove
     iter: Chars<'a>,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<'a> MetaUpdate for Drain<'a> {
+
 }
 
 #[stable(feature = "collection_debug", since = "1.17.0")]

@@ -243,6 +243,7 @@
 
 #[cfg(not(test))]
 use crate::boxed::Box;
+use crate::metasafe::MetaUpdate;
 #[cfg(test)]
 use std::boxed::Box;
 
@@ -291,6 +292,15 @@ struct RcBox<T: ?Sized> {
     value: T,
 }
 
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: ?Sized> MetaUpdate for RcBox<T> {
+    /// The synchronizer for RcBox:
+    /// Should ensure strong & weak are not 0
+    fn synchronize(&self) {
+        
+    }
+}
+
 /// Calculate layout for `RcBox<T>` using the inner value's layout
 fn rcbox_layout_for_value_layout(layout: Layout) -> Layout {
     // Calculate layout using the given value layout.
@@ -320,6 +330,11 @@ pub struct Rc<
     ptr: NonNull<RcBox<T>>,
     phantom: PhantomData<RcBox<T>>,
     alloc: A,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: ?Sized, A: Allocator> MetaUpdate for Rc<T, A> {
+
 }
 
 #[stable(feature = "rust1", since = "1.0.0")]
@@ -2692,6 +2707,11 @@ pub struct Weak<
     alloc: A,
 }
 
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: Sized, A: Allocator> MetaUpdate for Weak<T, A> {
+
+}
+
 #[stable(feature = "rc_weak", since = "1.4.0")]
 impl<T: ?Sized, A: Allocator> !Send for Weak<T, A> {}
 #[stable(feature = "rc_weak", since = "1.4.0")]
@@ -2763,6 +2783,11 @@ pub(crate) fn is_dangling<T: ?Sized>(ptr: *mut T) -> bool {
 struct WeakInner<'a> {
     weak: &'a Cell<usize>,
     strong: &'a Cell<usize>,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<'a> MetaUpdate for WeakInner<'a> {
+
 }
 
 impl<T: ?Sized> Weak<T> {
@@ -3401,6 +3426,11 @@ fn data_offset_align(align: usize) -> usize {
 pub struct UniqueRc<T> {
     ptr: NonNull<RcBox<T>>,
     phantom: PhantomData<RcBox<T>>,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T> MetaUpdate for UniqueRc<T> {
+    
 }
 
 impl<T> UniqueRc<T> {
