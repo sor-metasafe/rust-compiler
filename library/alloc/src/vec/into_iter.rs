@@ -3,6 +3,7 @@ use super::AsVecIntoIter;
 use crate::alloc::{Allocator, Global};
 #[cfg(not(no_global_oom_handling))]
 use crate::collections::VecDeque;
+use crate::metasafe::MetaUpdate;
 use crate::raw_vec::RawVec;
 use core::array;
 use core::fmt;
@@ -44,6 +45,11 @@ pub struct IntoIter<
     pub(super) end: *const T, // If T is a ZST, this is actually ptr+len. This encoding is picked so that
                               // ptr == end is a quick test for the Iterator being empty, that works
                               // for both ZST and non-ZST.
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T, A: Allocator> MetaUpdate for IntoIter<T, A>{
+    
 }
 
 #[stable(feature = "vec_intoiter_debug", since = "1.13.0")]

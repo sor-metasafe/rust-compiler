@@ -1,4 +1,5 @@
 use crate::alloc::{Allocator, Global};
+use crate::metasafe::MetaUpdate;
 use core::ptr;
 use core::slice;
 
@@ -37,6 +38,11 @@ pub struct ExtractIf<
     pub(super) old_len: usize,
     /// The filter test predicate.
     pub(super) pred: F,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<'a, T, F, A: Allocator> MetaUpdate for ExtractIf<'a,T,F,A>{
+    
 }
 
 impl<T, F, A: Allocator> ExtractIf<'_, T, F, A>

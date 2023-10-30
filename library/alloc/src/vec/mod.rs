@@ -69,6 +69,7 @@ use crate::alloc::{Allocator, Global};
 use crate::borrow::{Cow, ToOwned};
 use crate::boxed::Box;
 use crate::collections::TryReserveError;
+use crate::metasafe::MetaUpdate;
 use crate::raw_vec::RawVec;
 
 #[unstable(feature = "extract_if", reason = "recently added", issue = "43244")]
@@ -396,6 +397,11 @@ mod spec_extend;
 pub struct Vec<T, #[unstable(feature = "allocator_api", issue = "32838")] A: Allocator = Global> {
     buf: RawVec<T, A>,
     len: usize,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T, A: Allocator> MetaUpdate for Vec<T,A>{
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////

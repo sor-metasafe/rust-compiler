@@ -1,11 +1,18 @@
 use core::ptr::{self};
 use core::slice::{self};
 
+use crate::metasafe::MetaUpdate;
+
 // A helper struct for in-place iteration that drops the destination slice of iteration,
 // i.e. the head. The source slice (the tail) is dropped by IntoIter.
 pub(super) struct InPlaceDrop<T> {
     pub(super) inner: *mut T,
     pub(super) dst: *mut T,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T> MetaUpdate for InPlaceDrop<T>{
+    
 }
 
 impl<T> InPlaceDrop<T> {

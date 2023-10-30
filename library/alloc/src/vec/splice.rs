@@ -1,4 +1,5 @@
 use crate::alloc::{Allocator, Global};
+use crate::metasafe::MetaUpdate;
 use core::ptr::{self};
 use core::slice::{self};
 
@@ -25,6 +26,11 @@ pub struct Splice<
 > {
     pub(super) drain: Drain<'a, I::Item, A>,
     pub(super) replace_with: I,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<'a, I: Iterator + 'a, A: Allocator> MetaUpdate for Splice<'a,I,A>{
+    
 }
 
 #[stable(feature = "vec_splice", since = "1.21.0")]

@@ -12,6 +12,7 @@ use core::ops::{Add, AddAssign};
 pub use core::borrow::{Borrow, BorrowMut};
 
 use crate::fmt;
+use crate::metasafe::MetaUpdate;
 #[cfg(not(no_global_oom_handling))]
 use crate::string::String;
 
@@ -187,6 +188,13 @@ where
     /// Owned data.
     #[stable(feature = "rust1", since = "1.0.0")]
     Owned(#[stable(feature = "rust1", since = "1.0.0")] <B as ToOwned>::Owned),
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<'a, B: ?Sized + 'a> MetaUpdate for Cow<'a, B> 
+where B: ToOwned
+{
+
 }
 
 #[stable(feature = "rust1", since = "1.0.0")]

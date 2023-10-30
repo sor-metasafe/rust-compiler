@@ -1,4 +1,5 @@
 use crate::alloc::{Allocator, Global};
+use crate::metasafe::MetaUpdate;
 use core::fmt;
 use core::iter::{FusedIterator, TrustedLen};
 use core::mem::{self, ManuallyDrop, SizedTypeProperties};
@@ -38,6 +39,10 @@ impl<T: fmt::Debug, A: Allocator> fmt::Debug for Drain<'_, T, A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Drain").field(&self.iter.as_slice()).finish()
     }
+}
+#[unstable(feature = "metasafe", issue = "none")]
+impl<'a, T, A: Allocator> MetaUpdate for Drain<'a, T, A>{
+    
 }
 
 impl<'a, T, A: Allocator> Drain<'a, T, A> {
