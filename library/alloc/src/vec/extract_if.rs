@@ -41,7 +41,9 @@ pub struct ExtractIf<
 }
 
 #[unstable(feature = "metasafe", issue = "none")]
-impl<'a, T, F, A: Allocator> MetaUpdate for ExtractIf<'a,T,F,A>{
+impl<'a, T, F, A: Allocator> MetaUpdate for ExtractIf<'a,T,F,A>
+where F: FnMut(&mut T)->bool,
+{
     
 }
 

@@ -11,6 +11,7 @@ use core::mem::{self, SizedTypeProperties};
 use core::ops::{Deref, DerefMut};
 use core::ptr::Pointee;
 use core::ptr::{self, NonNull};
+use crate::metasafe::MetaUpdate;
 
 /// ThinBox.
 ///
@@ -36,6 +37,11 @@ pub struct ThinBox<T: ?Sized> {
     // but that would be invariant in `T`, and we want covariance.
     ptr: WithOpaqueHeader,
     _marker: PhantomData<T>,
+}
+
+#[unstable(feature = "metasafe", issue = "none")]
+impl<T: ?Sized> MetaUpdate for ThinBox<T> {
+    
 }
 
 /// `ThinBox<T>` is `Send` if `T` is `Send` because the data is owned.

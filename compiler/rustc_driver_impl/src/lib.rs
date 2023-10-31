@@ -218,11 +218,9 @@ impl Callbacks for TimePassesCallbacks {
         ctxt_result.enter(|tcx|{
             if tcx.sess.opts.unstable_opts.metaupdate && tcx.sess.opts.unstable_opts.metaupdate_analysis {
                 metaupdate::hir_visitor::run_metasafe_analysis_stage(tcx);
-                Compilation::Stop
-            }else {
-                Compilation::Continue
             }
-        })
+        });
+        Compilation::Continue
     }
 }
 
