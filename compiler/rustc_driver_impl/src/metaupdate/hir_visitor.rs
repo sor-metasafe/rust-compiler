@@ -68,7 +68,9 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
         };
         crates.iter().for_each(|crate_num|{
             let crate_name = tcx.crate_name(*crate_num).to_string();
-            this.add_crate(crate_name);
+            if !this.crate_records.contains_key(&crate_name) {
+                this.add_crate(crate_name);
+            }
         });
         this
     }
