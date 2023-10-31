@@ -2,7 +2,7 @@ use std::{path::Path, io::BufReader};
 
 use rustc_ast::NodeId;
 use rustc_data_structures::fx::{FxHashMap, FxHashSet};
-use rustc_hir::{intravisit::Visitor, ExprKind, def_id::DefId};
+use rustc_hir::{self as hir, intravisit::Visitor, ExprKind, def_id::{DefId, LOCAL_CRATE}};
 use rustc_middle::{hir::nested_filter::OnlyBodies, ty::{self, TyCtxt}};
 
 use serde::{Serialize, Deserialize};
@@ -20,6 +20,11 @@ struct CrateRecord {
     structs: FxHashMap<usize, StructRecord>
 }
 
+impl CrateRecord {
+    fn new(name: String) -> Self {
+        Self { crate_name: name, structs: FxHashMap::default() }
+    }
+}
 #[derive(Serialize, Deserialize)]
 struct StructRecord {
     index: usize,
@@ -85,7 +90,7 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
 
     fn add_special_field_expr_use(&mut self, adt_def: DefId, fdef_index: usize, ident: String, struct_index: usize, fx_usage: NodeId) {
         let crate_name = self.tcx.crate_name(adt_def.krate).to_string();
-        let krate = self.crate_records.get_mut(&crate_name).unwrap();
+        let krate = self.crate_records.entry(crate_name.clone()).or_insert(CrateRecord::new(crate_name.clone()));
         krate.structs.entry(adt_def.index.as_usize()).and_modify(|struct_entry|{
             struct_entry.fields.entry(struct_index).and_modify(|field_entry|{
                 field_entry.field_expr_uses.insert(fx_usage.as_u32());
@@ -116,10 +121,10 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
     /// expressions from struct {i: ..., }
     fn add_struct_field_defs(&mut self, adt_def: DefId, fdef_index: usize, ident: String, struct_index: usize, field_def: NodeId) {
         let crate_name = self.tcx.crate_name(adt_def.krate).to_string();
-        let krate = self.crate_records.get_mut(&crate_name).unwrap();
+        let krate = self.crate_records.entry(crate_name.clone()).or_insert(CrateRecord::new(crate_name.clone()));
         krate.structs.entry(adt_def.index.as_usize()).and_modify(|struct_entry|{
             struct_entry.fields.entry(struct_index).and_modify(|field_entry|{
-                field_entry.field_expr_uses.insert(field_def.as_u32());
+                field_entry.struct_field_defs.insert(field_def.as_u32());
             }).or_insert_with(||{
                 let mut defs = FxHashSet::default();
                 defs.insert(field_def.as_u32());
@@ -145,18 +150,13 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
     }
 
     fn add_field_record(&mut self, crate_name: String, field_ident: String, field_index: usize, field_node_id: NodeId) {
-        self.field_def_records.entry(crate_name).and_modify(|entry|{
-            entry.push(FieldDefRecord {
+        let records = self.field_def_records
+                                                    .entry(crate_name.clone())
+                                                    .or_insert(vec![]);
+        records.push(FieldDefRecord {
                 ident: field_ident.clone(),
                 def_index: field_index,
                 node_id: field_node_id.as_u32()
-            });
-        }).or_insert_with(||{
-            vec![FieldDefRecord {
-                ident: field_ident.clone(),
-                def_index: field_index,
-                node_id: field_node_id.as_u32()
-            }]
         });
     }
 
@@ -185,7 +185,7 @@ impl<'tcx> Visitor<'tcx> for HirAnalysisCtxt<'tcx> {
 
     /// Visit an HIR expression. This should help identify which generic types end up
     /// taking smart pointer generics
-    fn visit_expr(&mut self, expr: &'_ rustc_hir::Expr<'_>) {
+    fn visit_expr(&mut self, expr: &'tcx rustc_hir::Expr<'tcx>) {
         match expr.kind {
             ExprKind::Struct(_,fields , _ ) => {
                 let tc = self.tcx.typeck(expr.hir_id.owner.def_id);
@@ -232,20 +232,23 @@ impl<'tcx> Visitor<'tcx> for HirAnalysisCtxt<'tcx> {
 
             _ => {}
         }
-        
+        hir::intravisit::walk_expr(self, expr);
     }
 
-    fn visit_field_def(&mut self, field_def: &'_ rustc_hir::FieldDef<'_>) {
+    fn visit_field_def(&mut self, field_def: &'tcx rustc_hir::FieldDef<'tcx>) {
         let ident = field_def.ident.to_string();
         let field_index = field_def.def_id.to_def_id().index.as_usize();
         let id_map = self.tcx.hir_id_to_node_id.borrow();
         let field_node_id = id_map.get(&field_def.hir_id).unwrap();
         let crate_name = self.tcx.crate_name(field_def.def_id.to_def_id().krate).to_string();
         self.add_field_record(crate_name, ident, field_index, *field_node_id);
+        hir::intravisit::walk_field_def(self, field_def);
     }
 }
 
 pub fn run_metasafe_analysis_stage<'tcx>(tcx: TyCtxt<'tcx>) {
+    let crate_name = tcx.crate_name(LOCAL_CRATE).to_string();
+    println!("Crate: {}, ID map size: {}", &crate_name, tcx.hir_id_to_node_id.borrow().len());
     let mut analyzer = HirAnalysisCtxt::new(tcx);
     tcx.hir().visit_all_item_likes_in_crate(&mut analyzer);
     analyzer.save_analysis();

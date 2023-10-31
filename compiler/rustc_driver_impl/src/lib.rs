@@ -216,6 +216,7 @@ impl Callbacks for TimePassesCallbacks {
         ) -> Compilation {
         let mut ctxt_result = queries.global_ctxt().unwrap();
         ctxt_result.enter(|tcx|{
+            let _ = tcx.analysis(());
             if tcx.sess.opts.unstable_opts.metaupdate && tcx.sess.opts.unstable_opts.metaupdate_analysis {
                 metaupdate::hir_visitor::run_metasafe_analysis_stage(tcx);
             }

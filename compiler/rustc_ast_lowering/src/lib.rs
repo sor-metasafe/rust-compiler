@@ -683,7 +683,7 @@ impl<'a, 'hir> LoweringContext<'a, 'hir> {
     fn lower_node_id(&mut self, ast_node_id: NodeId) -> hir::HirId {
         assert_ne!(ast_node_id, DUMMY_NODE_ID);
 
-        match self.node_id_to_local_id.entry(ast_node_id) {
+        let hir_id = match self.node_id_to_local_id.entry(ast_node_id) {
             Entry::Occupied(o) => {
                 hir::HirId { owner: self.current_hir_id_owner, local_id: *o.get() }
             }
@@ -707,7 +707,13 @@ impl<'a, 'hir> LoweringContext<'a, 'hir> {
 
                 hir_id
             }
+        };
+        // MetaSafe: record the HirID<->NodeId relationship
+        if self.tcx.sess.opts.unstable_opts.metaupdate && self.tcx.sess.opts.unstable_opts.metaupdate_analysis {
+            let mut map = self.tcx.hir_id_to_node_id.borrow_mut();
+            map.insert(hir_id, ast_node_id);
         }
+        hir_id
     }
 
     /// Generate a new `HirId` without a backing `NodeId`.

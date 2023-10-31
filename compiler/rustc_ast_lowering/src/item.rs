@@ -722,11 +722,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
             self.lower_ty(&f.ty, &ImplTraitContext::Disallowed(ImplTraitPosition::FieldTy))
         };
         let hir_id = self.lower_node_id(f.id);
-        // MetaSafe: record HirId<->NodeId relationship
-        if self.tcx.sess.opts.unstable_opts.metaupdate && self.tcx.sess.opts.unstable_opts.metaupdate_analysis {
-            let mut map = self.tcx.hir_id_to_node_id.borrow_mut();
-            map.insert(hir_id, f.id);
-        }
+
         self.lower_attrs(hir_id, &f.attrs);
         hir::FieldDef {
             span: self.lower_span(f.span),
