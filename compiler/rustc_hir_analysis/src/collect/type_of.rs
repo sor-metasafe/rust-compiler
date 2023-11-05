@@ -7,7 +7,6 @@ use rustc_middle::ty::util::IntTypeExt;
 use rustc_middle::ty::{self, ImplTraitInTraitData, IsSuggestable, Ty, TyCtxt, TypeVisitableExt, EarlyBinder};
 use rustc_span::symbol::Ident;
 use rustc_span::{Span, DUMMY_SP};
-use ty::Adt;
 
 use super::ItemCtxt;
 use super::{bad_placeholder, is_suggestable_infer_ty};
@@ -516,6 +515,8 @@ pub(super) fn type_of(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::EarlyBinder<Ty
 }
 
 pub(super) fn is_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> bool {
+    
+    let def_ty = def_ty.peel_refs();
     // All boxes are smart pointers
     if def_ty.is_box() {
         return true;
@@ -523,7 +524,7 @@ pub(super) fn is_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> boo
 
     let metaupdate_trait_id = tcx.metasafe_metaupdate_trait_id(()).unwrap();
 
-    if let Adt(adt_def, generics) = def_ty.kind() {
+    if let ty::Adt(adt_def, generics) = def_ty.kind() {
         let def_id = adt_def.did();
         for impl_id in tcx.all_impls(metaupdate_trait_id) {
             if let Some(trait_ref) = tcx.impl_trait_ref(impl_id).map(EarlyBinder::instantiate_identity) {
@@ -559,6 +560,7 @@ pub(super) fn metasafe_metaupdate_trait_id(tcx: TyCtxt<'_>, ():()) -> Option<Def
 
 pub(super) fn contains_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> bool {
 
+    let def_ty = def_ty.peel_refs();
     if tcx.is_smart_pointer(def_ty) {
         return false;
     }
