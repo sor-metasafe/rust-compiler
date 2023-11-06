@@ -3,11 +3,9 @@ use crate::interface::{Compiler, Result};
 use crate::proc_macro_decls;
 use crate::util;
 
-use ast::NodeId;
 use rustc_ast::{self as ast, visit};
 use rustc_borrowck as mir_borrowck;
 use rustc_codegen_ssa::traits::CodegenBackend;
-use rustc_data_structures::fx::FxHashSet;
 use rustc_data_structures::parallel;
 use rustc_data_structures::steal::Steal;
 use rustc_data_structures::sync::{Lrc, OnceCell, WorkerLocal};
@@ -37,6 +35,8 @@ use rustc_span::symbol::{sym, Symbol};
 use rustc_span::FileName;
 use rustc_target::spec::PanicStrategy;
 use rustc_trait_selection::traits;
+use rustc_metasafe as metasafe;
+use ast::mut_visit::MutVisitor;
 
 use std::any::Any;
 use std::ffi::OsString;
@@ -146,10 +146,10 @@ impl LintStoreExpand for LintStoreExpandImpl<'_> {
 /// harness if one is to be provided, injection of a dependency on the
 /// standard library and prelude, and name resolution.
 #[instrument(level = "trace", skip(krate, resolver))]
-fn configure_and_expand(
+fn configure_and_expand<'a,'tcx>(
     mut krate: ast::Crate,
     pre_configured_attrs: &[ast::Attribute],
-    resolver: &mut Resolver<'_, '_>,
+    resolver: &'a mut Resolver<'a, 'tcx>,
 ) -> ast::Crate {
     let tcx = resolver.tcx();
     let sess = tcx.sess;
@@ -299,6 +299,12 @@ fn configure_and_expand(
     });
 
     // Done with macro expansion!
+
+    //MetaSafe, insert shadow blocks in structs
+    if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
+        let mut metasafe_ast_visitor = metasafe::ast_visitor::AstMutVisitor::new(crate_name.to_string().clone(), resolver);
+        metasafe_ast_visitor.visit_crate(&mut krate);
+    }
 
     resolver.resolve_crate(&krate);
 
@@ -694,7 +700,6 @@ pub fn create_global_ctxt<'tcx>(
     gcx_cell: &'tcx OnceCell<GlobalCtxt<'tcx>>,
     arena: &'tcx WorkerLocal<Arena<'tcx>>,
     hir_arena: &'tcx WorkerLocal<rustc_hir::Arena<'tcx>>,
-    boxables: Option<Lrc<(FxHashSet<NodeId>, FxHashSet<NodeId>)>>
 ) -> &'tcx GlobalCtxt<'tcx> {
     // We're constructing the HIR here; we don't care what we will
     // read, since we haven't even constructed the *input* to
@@ -734,8 +739,7 @@ pub fn create_global_ctxt<'tcx>(
                     extern_providers,
                     query_result_on_disk_cache,
                     incremental,
-                ),
-                boxables
+                )
             )
         })
     })

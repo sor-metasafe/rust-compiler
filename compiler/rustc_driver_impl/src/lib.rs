@@ -62,7 +62,7 @@ use std::time::{Instant, SystemTime};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
-mod metaupdate;
+use rustc_metasafe as metasafe;
 
 #[allow(unused_macros)]
 macro do_not_use_print($($t:tt)*) {
@@ -208,6 +208,26 @@ impl Callbacks for TimePassesCallbacks {
         config.opts.trimmed_def_paths = TrimmedDefPaths::GoodPath;
     }
 
+    // fn after_expansion<'tcx>(
+    //         &mut self,
+    //         _compiler: &interface::Compiler,
+    //         _queries: &'tcx Queries<'tcx>,
+    //     ) -> Compilation {
+    //     let sess = _compiler.session();
+    //     if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
+    //         let crate_name_src = sess.opts.crate_name.as_ref();
+    //         let unknown_crate_name = "UNKNOWN_CRATE".to_string();
+    //         let crate_name_src = crate_name_src.unwrap_or(&unknown_crate_name);
+    //         let crate_name = crate_name_src.clone();
+    //         let mut binding = _queries.parse().unwrap();
+    //         let mut krate = binding.get_mut();
+    //         let mut ast_visitor = AstMutVisitor::new(crate_name);
+    //         ast_visitor.visit_crate(&mut krate);
+    //     }
+
+    //     Compilation::Continue
+    // }
+
     fn after_analysis<'tcx>(
             &mut self,
             _handler: &EarlyErrorHandler,
@@ -218,7 +238,7 @@ impl Callbacks for TimePassesCallbacks {
         ctxt_result.enter(|tcx|{
             let _ = tcx.analysis(());
             if tcx.sess.opts.unstable_opts.metaupdate && tcx.sess.opts.unstable_opts.metaupdate_analysis {
-                metaupdate::hir_visitor::run_metasafe_analysis_stage(tcx);
+                metasafe::hir_analysis::run_metasafe_analysis_stage(tcx);
             }
         });
         Compilation::Continue

@@ -21,7 +21,8 @@ pub struct StructRecord {
     pub def_index: usize,
     pub node_id: u32,
     pub needs_box: bool,
-    pub struct_defs: FxHashMap<String, FxHashSet<u32>>
+    pub struct_defs: FxHashMap<String, FxHashSet<u32>>,
+    pub except_defs: FxHashMap<String, FxHashSet<u32>>
 }
 
 impl<'tcx> HirAnalysisCtxt<'tcx> {
@@ -69,7 +70,6 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
 
         struct_record.def_index = def_id;
         struct_record.node_id = node_id.as_u32();
-        struct_record.needs_box = false;
     }
 
     fn mark_struct_boxable(&mut self, struct_did: DefId) {
@@ -89,6 +89,15 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
                 defs.insert(def_id.as_u32());
             });
         });
+    }
+
+    fn set_struct_def_exception(&mut self, struct_did: DefId, expr_id: NodeId) {
+        let crate_name = self.tcx.crate_name(struct_did.krate).to_string();
+        let struct_records = self.struct_records.entry(crate_name).or_default();
+        let record = struct_records.entry(struct_did.index.as_usize()).or_default();
+        record.needs_box = true;
+        let except_defs = record.except_defs.entry(self.curr_crate_name.clone()).or_default();
+        except_defs.insert(expr_id.as_u32());
     }
 
     fn save_analysis(&self) {
@@ -121,6 +130,7 @@ impl<'tcx> Visitor<'tcx> for HirAnalysisCtxt<'tcx> {
             ExprKind::Struct(_,_ , _ ) => {
                 let tc = self.tcx.typeck(expr.hir_id.owner.def_id);
                 if let Some(parent_ty) = tc.node_type_opt(expr.hir_id) {
+                    let parent_ty = parent_ty.peel_refs();
                     if let ty::Adt(adt, _) = parent_ty.kind() {
                         let struct_did = adt.did();
                         if self.tcx.contains_smart_pointer(parent_ty) {
@@ -129,6 +139,23 @@ impl<'tcx> Visitor<'tcx> for HirAnalysisCtxt<'tcx> {
                         let id_map = self.tcx.hir_id_to_node_id.borrow();
                         let expr_id = id_map.get(&expr.hir_id).unwrap();
                         self.add_struct_def(struct_did, *expr_id);
+                    }
+                }
+            },
+
+            ExprKind::Assign(lhs,_ ,_) => {
+                if let ExprKind::Struct(_, _,_) = lhs.kind {
+                    let tc = self.tcx.typeck(expr.hir_id.owner.def_id);
+                    if let Some(lhs_ty) = tc.node_type_opt(lhs.hir_id) {
+                        if self.tcx.contains_smart_pointer(lhs_ty) {
+                            let lhs_ty = lhs_ty.peel_refs();
+                            if let ty::Adt(adt, _) = lhs_ty.kind() {
+                                let struct_id = adt.did();
+                                let id_map = self.tcx.hir_id_to_node_id.borrow();
+                                let expr_id = id_map.get(&lhs.hir_id).unwrap();
+                                self.set_struct_def_exception(struct_id, *expr_id);
+                            }
+                        }
                     }
                 }
             },
