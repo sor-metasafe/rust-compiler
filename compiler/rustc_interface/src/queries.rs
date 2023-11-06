@@ -5,15 +5,18 @@ use crate::{passes, util};
 use rustc_ast as ast;
 use rustc_codegen_ssa::traits::CodegenBackend;
 use rustc_codegen_ssa::CodegenResults;
+use rustc_data_structures::fx::FxHashSet;
 use rustc_data_structures::steal::Steal;
 use rustc_data_structures::svh::Svh;
 use rustc_data_structures::sync::{AppendOnlyIndexVec, Lrc, OnceCell, RwLock, WorkerLocal};
 use rustc_hir::def_id::{StableCrateId, CRATE_DEF_ID, LOCAL_CRATE};
 use rustc_hir::definitions::Definitions;
+use rustc_hir_analysis::metasafe::{AnalysisRecords, load_analysis};
 use rustc_incremental::DepGraphFuture;
 use rustc_metadata::creader::CStore;
 use rustc_middle::arena::Arena;
 use rustc_middle::dep_graph::DepGraph;
+use rustc_middle::infer::canonical::CanonicalQueryResponse;
 use rustc_middle::ty::{GlobalCtxt, TyCtxt};
 use rustc_session::config::{self, CrateType, OutputFilenames, OutputType};
 use rustc_session::cstore::Untracked;
@@ -173,6 +176,9 @@ impl<'tcx> Queries<'tcx> {
             let sess = self.session();
             let (krate, pre_configured_attrs) = self.pre_configure()?.steal();
 
+            let mut boxable_structs = FxHashSet::default();
+            let mut boxable_struct_defs = FxHashSet::default();
+
             // parse `#[crate_name]` even if `--crate-name` was passed, to make sure it matches.
             let crate_name = find_crate_name(sess, &pre_configured_attrs);
             let crate_types = util::collect_crate_types(sess, &pre_configured_attrs);
@@ -183,6 +189,12 @@ impl<'tcx> Queries<'tcx> {
                 sess.cfg_version,
             );
 
+            if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
+                let crate_name = crate_name.to_string();
+                let analysis_records = load_analysis(crate_name);
+                boxable_structs = analysis_records.structs.clone();//Some(analysis_records.structs.clone());
+                boxable_struct_defs = analysis_records.struct_defs.clone();
+            }
             // Compute the dependency graph (in the background). We want to do this as early as
             // possible, to give the DepGraph maximum time to load before `dep_graph` is called.
             let dep_graph_future = self.dep_graph_future(crate_name, stable_crate_id)?;
@@ -213,6 +225,7 @@ impl<'tcx> Queries<'tcx> {
                 &self.gcx_cell,
                 &self.arena,
                 &self.hir_arena,
+                Some(Lrc::new((boxable_structs, boxable_struct_defs)))
             );
 
             qcx.enter(|tcx| {

@@ -28,3 +28,6 @@ rustc_lint_defs = { path = "../rustc_lint_defs" }
 rustc_type_ir = { path = "../rustc_type_ir" }
 rustc_feature = { path = "../rustc_feature" }
 tracing = "0.1"
+
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

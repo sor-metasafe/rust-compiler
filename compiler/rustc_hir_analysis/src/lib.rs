@@ -79,7 +79,7 @@ extern crate rustc_middle;
 
 // These are used by Clippy.
 pub mod check;
-
+pub mod metasafe;
 pub mod astconv;
 pub mod autoderef;
 mod bounds;

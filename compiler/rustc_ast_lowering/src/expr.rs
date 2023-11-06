@@ -303,6 +303,31 @@ impl<'hir> LoweringContext<'_, 'hir> {
                         }
                         StructRest::None => None,
                     };
+
+                    let mut fields = self.arena.alloc_from_iter(se.fields.iter().map(|x| self.lower_expr_field(x)));
+                    if rest.is_none() && self.tcx.sess.opts.unstable_opts.metaupdate && !self.tcx.sess.opts.unstable_opts.metaupdate_analysis {
+                        if self.tcx.analysis_records.1.contains(&e.id) {
+                            let lit_token = token::Lit {
+                                symbol: Symbol::intern("32"),
+                                kind: token::LitKind::Integer,
+                                suffix: None
+                            };
+                            let lit_kind = LitKind::from_token_lit(lit_token).unwrap();
+                            let array_expr = hir::Expr {
+                                hir_id: self.next_id(),
+                                kind: hir::ExprKind::Repeat(
+                                   let repeated = hir::Expr {
+                                       hir_id: self.next_id(),
+                                       kind: hir::ExprKind::Lit(
+                                           let lit = hir::Lit {
+
+                                           }
+                                       )
+                                   }
+                                )
+                            }
+                        }
+                    }
                     hir::ExprKind::Struct(
                         self.arena.alloc(self.lower_qpath(
                             e.id,

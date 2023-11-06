@@ -3,9 +3,11 @@ use crate::interface::{Compiler, Result};
 use crate::proc_macro_decls;
 use crate::util;
 
+use ast::NodeId;
 use rustc_ast::{self as ast, visit};
 use rustc_borrowck as mir_borrowck;
 use rustc_codegen_ssa::traits::CodegenBackend;
+use rustc_data_structures::fx::FxHashSet;
 use rustc_data_structures::parallel;
 use rustc_data_structures::steal::Steal;
 use rustc_data_structures::sync::{Lrc, OnceCell, WorkerLocal};
@@ -692,6 +694,7 @@ pub fn create_global_ctxt<'tcx>(
     gcx_cell: &'tcx OnceCell<GlobalCtxt<'tcx>>,
     arena: &'tcx WorkerLocal<Arena<'tcx>>,
     hir_arena: &'tcx WorkerLocal<rustc_hir::Arena<'tcx>>,
+    boxables: Option<Lrc<(FxHashSet<NodeId>, FxHashSet<NodeId>)>>
 ) -> &'tcx GlobalCtxt<'tcx> {
     // We're constructing the HIR here; we don't care what we will
     // read, since we haven't even constructed the *input* to
@@ -732,6 +735,7 @@ pub fn create_global_ctxt<'tcx>(
                     query_result_on_disk_cache,
                     incremental,
                 ),
+                boxables
             )
         })
     })

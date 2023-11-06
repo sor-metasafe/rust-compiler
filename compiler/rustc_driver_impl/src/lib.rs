@@ -19,9 +19,7 @@ extern crate tracing;
 
 pub extern crate rustc_plugin_impl as plugin;
 
-use metaupdate::ast_visitor::AstMutVisitor;
 use rustc_ast as ast;
-use rustc_attr::find_crate_name;
 use rustc_codegen_ssa::{traits::CodegenBackend, CodegenErrors, CodegenResults};
 use rustc_data_structures::profiling::{
     get_resident_set_size, print_time_passes_entry, TimePassesFormat,
@@ -46,7 +44,6 @@ use rustc_span::source_map::{FileLoader, FileName};
 use rustc_span::symbol::sym;
 use rustc_target::json::ToJson;
 use rustc_target::spec::{Target, TargetTriple};
-use rustc_ast::mut_visit::MutVisitor;
 
 use std::cmp::max;
 use std::collections::BTreeMap;
@@ -209,23 +206,6 @@ impl Callbacks for TimePassesCallbacks {
         self.time_passes = (config.opts.prints.is_empty() && config.opts.unstable_opts.time_passes)
             .then(|| config.opts.unstable_opts.time_passes_format);
         config.opts.trimmed_def_paths = TrimmedDefPaths::GoodPath;
-    }
-
-    fn after_expansion<'tcx>(
-            &mut self,
-            compiler: &interface::Compiler,
-            queries: &'tcx Queries<'tcx>,
-        ) -> Compilation {
-        let sess = compiler.session();
-        if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
-            let mut binding = queries.parse().unwrap();
-            let mut krate = binding.get_mut();
-            let krate_name = find_crate_name(&krate.attrs).unwrap();
-            let krate_name = krate_name.to_string();
-            let mut ast_visitor = AstMutVisitor::new(krate_name);
-            ast_visitor.visit_crate(&mut krate);
-        }
-        Compilation::Continue
     }
 
     fn after_analysis<'tcx>(

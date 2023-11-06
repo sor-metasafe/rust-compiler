@@ -12,15 +12,16 @@ use serde_json;
 pub struct HirAnalysisCtxt<'tcx> {
     tcx: TyCtxt<'tcx>,
     curr_crate_name: String,
-    crate_records: FxHashMap<String, FxHashMap<usize, StructRecord>>,
+    struct_records: FxHashMap<String, FxHashMap<usize, StructRecord>>,
+    crate_name: String //  the current crate name
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct StructRecord {
     pub def_index: usize,
     pub node_id: u32,
     pub needs_box: bool,
-    pub struct_defs: FxHashSet<u32>
+    pub struct_defs: FxHashMap<String, FxHashSet<u32>>
 }
 
 impl<'tcx> HirAnalysisCtxt<'tcx> {
@@ -34,22 +35,23 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
         let mut record_file = path.to_path_buf();
         record_file.push("analysis.json");
 
-        let mut crate_records: FxHashMap<String, FxHashMap<usize, StructRecord>> = FxHashMap::default();
-
+        let mut struct_records = FxHashMap::default();
         if record_file.exists() {
             let file = std::fs::File::open(record_file.as_path()).unwrap();
             let buf_reader = BufReader::new(file);
-            crate_records = serde_json::from_reader(buf_reader).unwrap();
+            struct_records = serde_json::from_reader(buf_reader).unwrap();
         }
         
         let mut this = Self {
             tcx,
             curr_crate_name: tcx.crate_name(LOCAL_CRATE).to_string(),
-            crate_records
+            struct_records,
+            crate_name: tcx.crate_name(LOCAL_CRATE).to_string()
         };
+
         crates.iter().for_each(|crate_num|{
             let crate_name = tcx.crate_name(*crate_num).to_string();
-            if !this.crate_records.contains_key(&crate_name) {
+            if !this.struct_records.contains_key(&crate_name) {
                 this.add_crate(crate_name);
             }
         });
@@ -57,35 +59,22 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
     }
 
     fn add_crate(&mut self, name: String){
-        self.crate_records.insert(name.clone(), FxHashMap::default());
+        self.struct_records.insert(name.clone(), FxHashMap::default());
     }
 
     fn add_struct(&mut self, node_id: NodeId, def_id: usize) {
         let crate_name = self.curr_crate_name.clone();
-        self.crate_records.entry(crate_name.clone()).and_modify(|map|{
-            let record = StructRecord {
-                def_index: def_id,
-                node_id: node_id.as_u32(),
-                needs_box: false,
-                struct_defs: FxHashSet::default()
-            };
-            map.insert(def_id, record);
-        }).or_insert_with(||{
-            let record = StructRecord {
-                def_index: def_id,
-                node_id: node_id.as_u32(),
-                needs_box: false,
-                struct_defs: FxHashSet::default()
-            };
-            let mut map = FxHashMap::default();
-            map.insert(def_id, record);
-            map
-        });
+        let struct_records = self.struct_records.entry(crate_name).or_default();
+        let struct_record = struct_records.entry(def_id).or_default();
+
+        struct_record.def_index = def_id;
+        struct_record.node_id = node_id.as_u32();
+        struct_record.needs_box = false;
     }
 
     fn mark_struct_boxable(&mut self, struct_did: DefId) {
         let crate_name = self.tcx.crate_name(struct_did.krate).to_string();
-        self.crate_records.entry(crate_name).and_modify(|map|{
+        self.struct_records.entry(crate_name).and_modify(|map|{
             map.entry(struct_did.index.as_usize()).and_modify(|rec|{
                 rec.needs_box = true
             });
@@ -94,9 +83,10 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
 
     fn add_struct_def(&mut self, struct_id: DefId, def_id: NodeId) {
         let crate_name = self.tcx.crate_name(struct_id.krate).to_string();
-        self.crate_records.entry(crate_name).and_modify(|map|{
+        self.struct_records.entry(crate_name).and_modify(|map|{
             map.entry(struct_id.index.as_usize()).and_modify(|record|{
-                record.struct_defs.insert(def_id.as_u32());
+                let defs = record.struct_defs.entry(self.crate_name.clone()).or_default();
+                defs.insert(def_id.as_u32());
             });
         });
     }
@@ -110,7 +100,7 @@ impl<'tcx> HirAnalysisCtxt<'tcx> {
         let mut file = path.to_path_buf();
         file.push("analysis.json");
 
-        let json_string = serde_json::to_string(&self.crate_records).unwrap();
+        let json_string = serde_json::to_string(&self.struct_records).unwrap();
         std::fs::write(file, json_string).unwrap();
     }
 

@@ -3536,9 +3536,7 @@ dependencies = [
  "rustc_target",
  "rustc_trait_selection",
  "rustc_ty_utils",
- "serde",
  "serde_json",
- "smallvec",
  "time",
  "tracing",
  "windows",
@@ -3690,6 +3688,8 @@ dependencies = [
  "rustc_target",
  "rustc_trait_selection",
  "rustc_type_ir",
+ "serde",
+ "serde_json",
  "smallvec",
  "tracing",
 ]

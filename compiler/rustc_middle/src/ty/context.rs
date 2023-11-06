@@ -568,6 +568,7 @@ pub struct GlobalCtxt<'tcx> {
     pub selection_cache: traits::SelectionCache<'tcx>,
     /// MetaSafe: maps HirIds back to NodeIds
     pub hir_id_to_node_id: Lock<FxHashMap<HirId, NodeId>>,
+    pub analysis_records: Lrc<(FxHashSet<NodeId>, FxHashSet<NodeId>)>,
 
     /// Caches the results of trait evaluation. This cache is used
     /// for things that do not have to do with the parameters in scope.
@@ -705,6 +706,7 @@ impl<'tcx> TyCtxt<'tcx> {
         dep_graph: DepGraph,
         query_kinds: &'tcx [DepKindStruct<'tcx>],
         query_system: QuerySystem<'tcx>,
+        boxables: Option<Lrc<(FxHashSet<NodeId>, FxHashSet<NodeId>)>>
     ) -> GlobalCtxt<'tcx> {
         let data_layout = s.target.parse_data_layout().unwrap_or_else(|err| {
             s.emit_fatal(err);
@@ -738,7 +740,8 @@ impl<'tcx> TyCtxt<'tcx> {
             new_solver_coherence_evaluation_cache: Default::default(),
             data_layout,
             alloc_map: Lock::new(interpret::AllocMap::new()),
-            hir_id_to_node_id: Lock::new(FxHashMap::default())
+            hir_id_to_node_id: Lock::new(FxHashMap::default()),
+            analysis_records: boxables.unwrap_or(Lrc::new((FxHashSet::default(), FxHashSet::default())))
         }
     }
 
