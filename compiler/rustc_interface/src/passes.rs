@@ -146,10 +146,10 @@ impl LintStoreExpand for LintStoreExpandImpl<'_> {
 /// harness if one is to be provided, injection of a dependency on the
 /// standard library and prelude, and name resolution.
 #[instrument(level = "trace", skip(krate, resolver))]
-fn configure_and_expand<'a,'tcx>(
+fn configure_and_expand(
     mut krate: ast::Crate,
     pre_configured_attrs: &[ast::Attribute],
-    resolver: &'a mut Resolver<'a, 'tcx>,
+    resolver: &mut Resolver<'_, '_>,
 ) -> ast::Crate {
     let tcx = resolver.tcx();
     let sess = tcx.sess;

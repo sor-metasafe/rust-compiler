@@ -3,35 +3,36 @@ use std::ops::DerefMut;
 use ast::{PathSegment, AngleBracketedArgs, AngleBracketedArg, AnonConst, Expr, ExprKind, StructExpr, ExprField};
 use rustc_ast::{self as ast, mut_visit::MutVisitor, GenericArgs, GenericArg, ptr::P, Item, ItemKind, NodeId, VariantData, FieldDef, Visibility, VisibilityKind, Ty, TyKind};
 use rustc_data_structures::fx::FxHashSet;
-use rustc_span::{symbol::Ident, Symbol, DUMMY_SP};
+use rustc_span::{symbol::Ident, Symbol, DUMMY_SP, LocalExpnId};
 use smallvec::{SmallVec, smallvec};
 use thin_vec::thin_vec;
-use rustc_resolve::Resolver;
 use rustc_expand::base::ResolverExpand;
 
 use crate::load_analysis;
 
-pub struct AstMutVisitor<'a, 'tcx> {
+pub struct AstMutVisitor<'a> {
     boxable_structs: FxHashSet<NodeId>,
     special_struct_defs: FxHashSet<NodeId>,
     except_struct_defs: FxHashSet<NodeId>,
-    resolver: &'a mut Resolver<'a, 'tcx>
+    resolver: &'a mut dyn ResolverExpand, 
+    expn_id: LocalExpnId
 }
 
 
-impl<'a,'tcx> AstMutVisitor<'a,'tcx> {
-    pub fn new(crate_name: String, resolver: &'a mut Resolver<'a,'tcx>) -> Self {
+impl<'a> AstMutVisitor<'a> {
+    pub fn new(crate_name: String, resolver: &'a mut dyn ResolverExpand) -> Self {
         let analysis_records = load_analysis(crate_name.clone());
         Self {
             boxable_structs: analysis_records.structs.clone(),
             special_struct_defs: analysis_records.struct_defs.clone(),
             except_struct_defs: analysis_records.except_defs.clone(),
-            resolver
+            resolver,
+            expn_id: LocalExpnId::fresh_empty()
         }
     }
 }
 
-fn visit_expr_inner<'a,'tcx>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut Expr, this: &mut AstMutVisitor<'a, 'tcx>) {
+fn visit_expr_inner<'a>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut Expr, this: &mut AstMutVisitor<'a>) {
     match kind {
         ExprKind::Struct(s) => {
             if this.special_struct_defs.contains(&id) && !this.except_struct_defs.contains(&id) {
@@ -109,17 +110,19 @@ fn visit_expr_inner<'a,'tcx>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut
     }
 }
 
-impl<'a,'tcx> MutVisitor for AstMutVisitor<'a,'tcx> {
+impl<'a> MutVisitor for AstMutVisitor<'a> {
     fn flat_map_item(&mut self, mut item: P<Item>) -> SmallVec<[P<Item>; 1]> {
         let Item { ident: _, attrs: _, id, kind, vis: _, span: _, tokens: _ } = item.deref_mut();
         match kind {
             ItemKind::Struct(vdata, _) => {
                 if self.boxable_structs.contains(id) {
                     if let VariantData::Struct(fields , _) = vdata {
+                        let field_id = self.resolver.next_node_id();
+                        self.resolver.create_d
                         let new_field = FieldDef {
                             ident: Some(Ident::from_str("metasafe_box")),
                             attrs: thin_vec![],
-                            id: self.resolver.next_node_id(),
+                            id: field_id,
                             span: DUMMY_SP,
                             vis: Visibility {
                                 kind: VisibilityKind::Public,
