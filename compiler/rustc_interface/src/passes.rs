@@ -149,7 +149,7 @@ impl LintStoreExpand for LintStoreExpandImpl<'_> {
 fn configure_and_expand(
     mut krate: ast::Crate,
     pre_configured_attrs: &[ast::Attribute],
-    resolver: &mut Resolver<'_,'_>,
+    resolver: &mut Resolver<'_, '_>,
 ) -> ast::Crate {
     let tcx = resolver.tcx();
     let sess = tcx.sess;

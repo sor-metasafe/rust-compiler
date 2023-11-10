@@ -6,8 +6,7 @@ use rustc_data_structures::fx::FxHashSet;
 use rustc_span::{symbol::Ident, Symbol, DUMMY_SP, LocalExpnId};
 use smallvec::{SmallVec, smallvec};
 use thin_vec::thin_vec;
-use rustc_expand::{base::ResolverExpand, expand::AstFragment};
-//use rustc_expand::base::ResolverExpand;
+use rustc_expand::base::ResolverExpand;
 
 use crate::load_analysis;
 
@@ -15,7 +14,8 @@ pub struct AstMutVisitor<'a> {
     boxable_structs: FxHashSet<NodeId>,
     special_struct_defs: FxHashSet<NodeId>,
     except_struct_defs: FxHashSet<NodeId>,
-    resolver: &'a mut dyn ResolverExpand
+    resolver: &'a mut dyn ResolverExpand,
+    expn_id: LocalExpnId
 }
 
 
@@ -26,7 +26,8 @@ impl<'a> AstMutVisitor<'a> {
             boxable_structs: analysis_records.structs.clone(),
             special_struct_defs: analysis_records.struct_defs.clone(),
             except_struct_defs: analysis_records.except_defs.clone(),
-            resolver
+            resolver,
+            expn_id: LocalExpnId::fresh_empty()
         }
     }
 }
@@ -119,10 +120,12 @@ impl<'a> MutVisitor for AstMutVisitor<'a> {
             ItemKind::Struct(vdata, _) => {
                 if self.boxable_structs.contains(id) {
                     if let VariantData::Struct(fields , _) = vdata {
+                        let field_id = self.resolver.next_node_id();
+                        self.resolver.create_d
                         let new_field = FieldDef {
                             ident: Some(Ident::from_str("metasafe_box")),
                             attrs: thin_vec![],
-                            id: DUMMY_NODE_ID,
+                            id: field_id,
                             span: DUMMY_SP,
                             vis: Visibility {
                                 kind: VisibilityKind::Public,
