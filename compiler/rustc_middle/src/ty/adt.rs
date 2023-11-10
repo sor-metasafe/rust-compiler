@@ -49,6 +49,8 @@ bitflags! {
         const IS_VARIANT_LIST_NON_EXHAUSTIVE = 1 << 8;
         /// Indicates whether the type is `UnsafeCell`.
         const IS_UNSAFE_CELL              = 1 << 9;
+        /// MetaSafe, whether a type has a shadow
+        const HAS_SHADOW    = 1 << 10;
     }
 }
 

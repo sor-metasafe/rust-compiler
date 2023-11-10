@@ -340,6 +340,38 @@ impl<'tcx> TyCtxt<'tcx> {
         (a, b)
     }
 
+    /// MetaSafe: Calculate the Validator of a given smart pointer
+
+    pub fn calculate_validator(
+        self,
+        adt_did: DefId
+    ) -> Option<ty::MetaSafeValidator>
+    {
+        let metaupdate_trait = self.metasafe_metaupdate_trait_id(())?;
+        self.ensure().coherent_trait(metaupdate_trait);
+
+        let ty = self.type_of(adt_did).instantiate_identity();
+        let mut validator_candidate = None;
+        self.for_each_relevant_impl(metaupdate_trait, ty, |impl_did|{
+            let Some(item_id) = self.associated_item_def_ids(impl_did).first() else {
+                self.sess
+                    .delay_span_bug(self.def_span(impl_did), "MetaSafe: Smart pointer without validator function");
+                return;
+            };
+
+            if let Some((old_item_id, _)) = validator_candidate {
+                self.sess
+                    .struct_span_err(self.def_span(item_id), "MetaSafe: Multiple validator impls found")
+                    .span_note(self.def_span(old_item_id), "other impl here")
+                    .delay_as_bug();
+            }
+
+            validator_candidate = Some((*item_id, self.constness(impl_did)));
+        });
+
+        let (did, constness) = validator_candidate?;
+        Some(ty::MetaSafeValidator{ did, constness})
+    }
     /// Calculate the destructor of a given type.
     pub fn calculate_dtor(
         self,

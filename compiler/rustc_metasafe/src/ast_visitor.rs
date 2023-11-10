@@ -1,26 +1,26 @@
 use std::ops::DerefMut;
 
 use ast::{PathSegment, AngleBracketedArgs, AngleBracketedArg, AnonConst, Expr, ExprKind, StructExpr, ExprField};
-use rustc_ast::{self as ast, mut_visit::MutVisitor, GenericArgs, GenericArg, ptr::P, Item, ItemKind, NodeId, VariantData, FieldDef, Visibility, VisibilityKind, Ty, TyKind};
+use rustc_ast::{self as ast, mut_visit::MutVisitor, GenericArgs, GenericArg, ptr::P, Item, ItemKind, NodeId, VariantData, FieldDef, Visibility, VisibilityKind, Ty, TyKind, DUMMY_NODE_ID};
 use rustc_data_structures::fx::FxHashSet;
-use rustc_span::{symbol::Ident, Symbol, DUMMY_SP};
+use rustc_span::{symbol::Ident, Symbol, DUMMY_SP, LocalExpnId};
 use smallvec::{SmallVec, smallvec};
 use thin_vec::thin_vec;
-use rustc_resolve::Resolver;
-use rustc_expand::base::ResolverExpand;
+use rustc_expand::{base::ResolverExpand, expand::AstFragment};
+//use rustc_expand::base::ResolverExpand;
 
 use crate::load_analysis;
 
-pub struct AstMutVisitor<'a, 'tcx> {
+pub struct AstMutVisitor<'a> {
     boxable_structs: FxHashSet<NodeId>,
     special_struct_defs: FxHashSet<NodeId>,
     except_struct_defs: FxHashSet<NodeId>,
-    resolver: &'a mut Resolver<'a, 'tcx>
+    resolver: &'a mut dyn ResolverExpand
 }
 
 
-impl<'a,'tcx> AstMutVisitor<'a,'tcx> {
-    pub fn new(crate_name: String, resolver: &'a mut Resolver<'a,'tcx>) -> Self {
+impl<'a> AstMutVisitor<'a> {
+    pub fn new(crate_name: String, resolver: &'a mut dyn ResolverExpand) -> Self {
         let analysis_records = load_analysis(crate_name.clone());
         Self {
             boxable_structs: analysis_records.structs.clone(),
@@ -31,24 +31,24 @@ impl<'a,'tcx> AstMutVisitor<'a,'tcx> {
     }
 }
 
-fn visit_expr_inner<'a,'tcx>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut Expr, this: &mut AstMutVisitor<'a, 'tcx>) {
+fn visit_expr_inner<'a>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut Expr, this: &mut AstMutVisitor<'a>) {
     match kind {
         ExprKind::Struct(s) => {
             if this.special_struct_defs.contains(&id) && !this.except_struct_defs.contains(&id) {
                 let StructExpr {qself: _,fields, path: _, rest: _} = s.deref_mut();
 
                 let array_expr = Expr {
-                    id: this.resolver.next_node_id(),
+                    id: DUMMY_NODE_ID,
                     kind: ExprKind::Repeat(
                         P(Expr {
-                            id: this.resolver.next_node_id(),
+                            id: DUMMY_NODE_ID,
                             kind: ExprKind::Lit(ast::token::Lit { kind: ast::token::LitKind::Integer, symbol: Symbol::intern("0"), suffix: None }),
                             span: DUMMY_SP,
                             attrs: thin_vec![],
                             tokens: None
-                        }), AnonConst { id: this.resolver.next_node_id(), value: P(
+                        }), AnonConst { id: DUMMY_NODE_ID, value: P(
                             Expr {
-                                id: this.resolver.next_node_id(),
+                                id: DUMMY_NODE_ID,
                                 kind: ExprKind::Lit(ast::token::Lit { kind: ast::token::LitKind::Integer, symbol: Symbol::intern("0"), suffix: None }),
                                 span: DUMMY_SP,
                                 attrs: thin_vec![],
@@ -63,24 +63,24 @@ fn visit_expr_inner<'a,'tcx>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut
                 let expr_field = ExprField {
                     ident: Ident::from_str("metasafe_box"),
                     attrs: thin_vec![],
-                    id: this.resolver.next_node_id(),
+                    id: DUMMY_NODE_ID,
                     span: DUMMY_SP,
                     expr: P(
                         Expr {
-                            id: this.resolver.next_node_id(),
+                            id: DUMMY_NODE_ID,
                             kind: ExprKind::Call(
                                 P(Expr {
-                                        id: this.resolver.next_node_id(),
+                                        id: DUMMY_NODE_ID,
                                         kind: ExprKind::Path(None, ast::Path {
                                             span: DUMMY_SP,
                                             segments: thin_vec![
                                                 PathSegment {
-                                                    id: this.resolver.next_node_id(),
+                                                    id: DUMMY_NODE_ID,
                                                     ident: Ident::from_str("Box"),
                                                     args: None
                                                 },
                                                 PathSegment {
-                                                    id: this.resolver.next_node_id(),
+                                                    id: DUMMY_NODE_ID,
                                                     ident: Ident::from_str("new"),
                                                     args: None
                                                 }
@@ -103,13 +103,16 @@ fn visit_expr_inner<'a,'tcx>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut
                 };
 
                 fields.push(expr_field);
+                let expn_id = LocalExpnId::fresh_empty();
+                let fragment = AstFragment::ExprFields(fields); // ::Expr()
+                this.resolver.visit_ast_fragment_with_placeholders(expn_id,&fragment);
             }
         },
         _ => {}
     }
 }
 
-impl<'a,'tcx> MutVisitor for AstMutVisitor<'a,'tcx> {
+impl<'a> MutVisitor for AstMutVisitor<'a> {
     fn flat_map_item(&mut self, mut item: P<Item>) -> SmallVec<[P<Item>; 1]> {
         let Item { ident: _, attrs: _, id, kind, vis: _, span: _, tokens: _ } = item.deref_mut();
         match kind {
@@ -119,7 +122,7 @@ impl<'a,'tcx> MutVisitor for AstMutVisitor<'a,'tcx> {
                         let new_field = FieldDef {
                             ident: Some(Ident::from_str("metasafe_box")),
                             attrs: thin_vec![],
-                            id: self.resolver.next_node_id(),
+                            id: DUMMY_NODE_ID,
                             span: DUMMY_SP,
                             vis: Visibility {
                                 kind: VisibilityKind::Public,
@@ -127,24 +130,24 @@ impl<'a,'tcx> MutVisitor for AstMutVisitor<'a,'tcx> {
                                 tokens: None
                             },
                             ty: P(Ty{
-                                id: self.resolver.next_node_id(),
+                                id: DUMMY_NODE_ID,
                                 kind: TyKind::Path(None, ast::Path {
                                                             segments: thin_vec![
                                                                 PathSegment {
                                                                     ident: Ident::from_str("Box"),
-                                                                    id: self.resolver.next_node_id(),
+                                                                    id: DUMMY_NODE_ID,
                                                                     args: Some(P(GenericArgs::AngleBracketed(AngleBracketedArgs{
                                                                         span: DUMMY_SP,
                                                                         args: thin_vec![AngleBracketedArg::Arg(GenericArg::Type(
                                                                             P(Ty {
-                                                                                id: self.resolver.next_node_id(),
+                                                                                id: DUMMY_NODE_ID,
                                                                                 kind: TyKind::Array(P(Ty {
-                                                                                                        id: self.resolver.next_node_id(), 
+                                                                                                        id: DUMMY_NODE_ID, 
                                                                                                         kind: TyKind::Path(None, ast::Path {
                                                                                                             segments: thin_vec![
                                                                                                                 PathSegment {
                                                                                                                     ident: Ident::from_str("u8"),
-                                                                                                                    id: self.resolver.next_node_id(),
+                                                                                                                    id: DUMMY_NODE_ID,
                                                                                                                     args: None,
                                                                                                                 }
                                                                                                             ],
@@ -155,9 +158,9 @@ impl<'a,'tcx> MutVisitor for AstMutVisitor<'a,'tcx> {
                                                                                                         tokens: None
                                                                                                     }), 
                                                                                                     AnonConst {
-                                                                                                        id: self.resolver.next_node_id(),
+                                                                                                        id: DUMMY_NODE_ID,
                                                                                                         value: P(Expr {
-                                                                                                            id: self.resolver.next_node_id(),
+                                                                                                            id: DUMMY_NODE_ID,
                                                                                                             kind: ExprKind::Lit(ast::token::Lit { 
                                                                                                                 kind: ast::token::LitKind::Integer,
                                                                                                                 symbol: Symbol::intern("32"),
@@ -189,7 +192,10 @@ impl<'a,'tcx> MutVisitor for AstMutVisitor<'a,'tcx> {
             },
             _ => {}
         }
-        smallvec![item]
+        let mut item = smallvec![item];
+        let expn_id = LocalExpnId::fresh_empty();
+        let fragment = AstFragment::Items(item);
+        item = self.resolver.visit_ast_fragment_with_placeholders(expn_id, &fragment);
     }
 
     fn visit_expr(&mut self, expr: &mut P<Expr>) {

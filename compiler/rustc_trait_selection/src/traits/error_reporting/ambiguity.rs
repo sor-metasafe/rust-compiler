@@ -1,9 +1,9 @@
 use rustc_hir::def_id::DefId;
 use rustc_infer::infer::{InferCtxt, LateBoundRegionConversionTime};
-use rustc_infer::traits::util::elaborate;
 use rustc_infer::traits::{Obligation, ObligationCause, PolyTraitObligation};
+use rustc_infer::traits::util::elaborate;
 use rustc_middle::ty;
-use rustc_span::{Span, DUMMY_SP};
+use rustc_span::{DUMMY_SP, Span};
 
 use crate::traits::ObligationCtxt;
 

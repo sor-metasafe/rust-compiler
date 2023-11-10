@@ -1815,6 +1815,15 @@ pub struct Destructor {
     pub constness: hir::Constness,
 }
 
+/// MetaSafe: Validator
+#[derive(Copy, Clone, Debug, HashStable, Encodable, Decodable)]
+pub struct MetaSafeValidator {
+    /// The `DefId` of the validator method
+    pub did: DefId,
+    /// The constness of the validator? ===> perhaps we won't need this
+    pub constness: hir::Constness
+}
+
 bitflags! {
     #[derive(HashStable, TyEncodable, TyDecodable)]
     pub struct VariantFlags: u8 {

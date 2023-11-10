@@ -104,6 +104,7 @@ mod simplify_comparison_integral;
 mod sroa;
 mod uninhabited_enum_branching;
 mod unreachable_prop;
+mod metasafe_validators;
 
 use rustc_const_eval::transform::check_consts::{self, ConstCx};
 use rustc_const_eval::transform::promote_consts;

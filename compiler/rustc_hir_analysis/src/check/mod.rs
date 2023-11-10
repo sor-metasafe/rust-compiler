@@ -115,6 +115,10 @@ fn adt_destructor(tcx: TyCtxt<'_>, def_id: LocalDefId) -> Option<ty::Destructor>
     tcx.calculate_dtor(def_id.to_def_id(), dropck::check_drop_impl)
 }
 
+fn smart_pointer_validator(tcx: TyCtxt<'_>, def_id: LocalDefId) -> Option<ty::MetaSafeValidator> {
+    tcx.calculate_validator(def_id.to_def_id())
+}
+
 /// Given a `DefId` for an opaque type in return position, find its parent item's return
 /// expressions.
 fn get_owner_return_paths(

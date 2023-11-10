@@ -146,10 +146,10 @@ impl LintStoreExpand for LintStoreExpandImpl<'_> {
 /// harness if one is to be provided, injection of a dependency on the
 /// standard library and prelude, and name resolution.
 #[instrument(level = "trace", skip(krate, resolver))]
-fn configure_and_expand<'a,'tcx>(
+fn configure_and_expand(
     mut krate: ast::Crate,
     pre_configured_attrs: &[ast::Attribute],
-    resolver: &'a mut Resolver<'a, 'tcx>,
+    resolver: &mut Resolver<'_,'_>,
 ) -> ast::Crate {
     let tcx = resolver.tcx();
     let sess = tcx.sess;
@@ -228,7 +228,14 @@ fn configure_and_expand<'a,'tcx>(
         let mut ecx = ExtCtxt::new(sess, cfg, resolver, Some(&lint_store));
         ecx.num_standard_library_imports = num_standard_library_imports;
         // Expand macros now!
-        let krate = sess.time("expand_crate", || ecx.monotonic_expander().expand_crate(krate));
+        let mut krate = sess.time("expand_crate", || ecx.monotonic_expander().expand_crate(krate));
+        //MetaSafe, insert shadow blocks in structs
+        if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
+            let mut metasafe_ast_visitor = metasafe::ast_visitor::AstMutVisitor::new(crate_name.to_string().clone());
+            metasafe_ast_visitor.visit_crate(&mut krate);
+            krate = sess.time("metasafe_expansion", || ecx.monotonic_expander().expand_crate(krate));
+        }
+
 
         // The rest is error reporting
 
@@ -299,12 +306,6 @@ fn configure_and_expand<'a,'tcx>(
     });
 
     // Done with macro expansion!
-
-    //MetaSafe, insert shadow blocks in structs
-    if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
-        let mut metasafe_ast_visitor = metasafe::ast_visitor::AstMutVisitor::new(crate_name.to_string().clone(), resolver);
-        metasafe_ast_visitor.visit_crate(&mut krate);
-    }
 
     resolver.resolve_crate(&krate);
 
