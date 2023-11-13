@@ -30,7 +30,9 @@ pub struct Splice<
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<'a, I: Iterator + 'a, A: Allocator> MetaUpdate for Splice<'a,I,A>{
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "vec_splice", since = "1.21.0")]

@@ -41,7 +41,9 @@ pub struct ThinBox<T: ?Sized> {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T: ?Sized> MetaUpdate for ThinBox<T> {
-    
+    fn synchronize(&self) {
+
+    }
 }
 
 /// `ThinBox<T>` is `Send` if `T` is `Send` because the data is owned.

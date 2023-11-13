@@ -44,7 +44,9 @@ pub struct ExtractIf<
 impl<'a, T, F, A: Allocator> MetaUpdate for ExtractIf<'a,T,F,A>
 where F: FnMut(&mut T)->bool,
 {
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<T, F, A: Allocator> ExtractIf<'_, T, F, A>

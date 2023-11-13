@@ -12,7 +12,7 @@ use rustc_middle::mir::{TerminatorKind, Operand, BasicBlockData, Terminator, Sou
 use rustc_middle::mir::{Body, patch::MirPatch, UnwindAction, CallSource};
 use rustc_middle::query::Key;
 use crate::MirPass;
-use rustc_middle::ty::{self, TyCtxt};
+use rustc_middle::ty::{self, Ty, TyCtxt, List};
 use rustc_session::Session;
 use rustc_hir as hir;
 
@@ -56,7 +56,7 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeValidatorCalls {
             return;
         }
 
-        let bbs = body.basic_blocks_mut();
+        let bbs = &body.basic_blocks;
         let mut validators = FxHashMap::default();
         let mut drop_validators = FxHashMap::default();
         let mut patch = MirPatch::new(body);
@@ -64,7 +64,7 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeValidatorCalls {
         //collect basic blocks where to insert validator calls.
         for idx in bbs.indices() {
             let terminator = bbs[idx].terminator();
-            match terminator.kind {
+            match &terminator.kind {
                 TerminatorKind::Call { func,args, destination, target, .. } => {
                     let callee = func.ty(&body.local_decls, tcx);
                     match callee.kind() {
@@ -82,30 +82,36 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeValidatorCalls {
                                     let mut arg_iter = args.iter();
                                     if let Some(first_arg) = arg_iter.next() {
                                         let arg_ty = first_arg.ty(&body.local_decls, tcx);
-                                        if arg_ty.peel_refs() == impl_ty {
+                                        if arg_ty.peel_refs().ty_adt_id() == impl_ty.ty_adt_id() {
                                             match arg_ty.kind() {
-                                                ty::Ref(_, ty, mutbl) => {
+                                                ty::Ref(_, _, mutbl) => {
                                                     if let Mutability::Mut = *mutbl {
-                                                        validators.insert(idx, (first_arg.clone(), validator, target.clone()));
+                                                        validators.insert(idx, (first_arg.clone(),  validator, target.clone()));
                                                     }
                                                 },
                                                 _ => {}
                                             }
                                         } else {
-                                            let dest_ty = destination.ty(&body.local_decls, tcx).ty;
-                                            if dest_ty.peel_refs() == impl_ty {
-                                                let operand = Operand::Copy(destination);
-                                                validators.insert(idx, (operand, validator, target.clone()));
-                                            }
+                                            panic!("Types don't match1? {} {}", impl_ty.to_string(), arg_ty.to_string());
+                                        }
+                                    } else {
+                                        let dest_ty = destination.ty(&body.local_decls, tcx).ty;
+                                        if dest_ty.peel_refs().ty_adt_id() == impl_ty.ty_adt_id() {
+                                            let operand = Operand::Copy(*destination);
+                                            validators.insert(idx, (operand, validator, target.clone()));
+                                        } else {
+                                            panic!("Types don't match2? {} {}", impl_ty.to_string(), dest_ty.to_string());
                                         }
                                     }
+                                } else if tcx.is_smart_pointer(impl_ty) {
+                                    panic!("No validator for: {}", impl_ty.to_string());
                                 }
                             }
                         },
                         _ => {}
                     }
                 },
-                TerminatorKind::Drop { place, target, unwind, replace } => {
+                TerminatorKind::Drop { place,.. } => {
                     let place_ty = place.ty(&body.local_decls, tcx);
                     let actual_ty = place_ty.ty;
                     if let Some(validator) = actual_ty.ty_adt_id().and_then(|id|{
@@ -119,23 +125,32 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeValidatorCalls {
         }
 
         for (idx, data) in validators {
-            let bb = body.basic_blocks_mut().get_mut(idx).unwrap();
-            let temp = Place::from(patch.new_temp(ty::Ty::new_tup(tcx, &[]), body.span));
-            let validator = Operand::function_handle(tcx, data.1.did, [], body.span);
+            let bb = bbs.get(idx).unwrap();
+            let temp = Place::from(patch.new_temp(Ty::new_tup(tcx, &[]), body.span.clone()));
+            let arg_ty = data.0.ty(&body.local_decls, tcx);
+            let args = if let ty::Adt(_, args) = arg_ty.peel_refs().kind() {
+                *args
+            } else {
+                List::empty()
+            };
+            let validator = Operand::function_handle(tcx, data.1.did, args, body.span.clone());
             let block_data = BasicBlockData {
                 statements: vec![],
                 terminator: Some(Terminator {
-                    source_info: SourceInfo::outermost(body.span),
-                    kind: TerminatorKind::Call { func: validator, args: vec![data.0], destination: temp, target: data.2.clone(), unwind: UnwindAction::Continue, call_source: CallSource::Misc, fn_span: body.span }
+                    source_info: SourceInfo::outermost(body.span.clone()),
+                    kind: TerminatorKind::Call { func: validator, args: vec![data.0], destination: temp, target: data.2.clone(), unwind: UnwindAction::Continue, call_source: CallSource::Misc, fn_span: body.span.clone() }
                 }),
                 is_cleanup: false
             };
             
             let new_idx = patch.new_block(block_data);
-            let orig_terminator = bb.terminator_mut();
-            if let TerminatorKind::Call{target,..} = &mut orig_terminator.kind {
+            let mut orig_terminator = bb.terminator().kind.clone();
+            if let TerminatorKind::Call{target,..} = &mut orig_terminator {
                 *target = Some(new_idx);
             }
+            patch.patch_terminator(idx, orig_terminator);
         }
+
+        patch.apply(body);
     }
 }

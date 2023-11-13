@@ -401,7 +401,11 @@ pub struct Vec<T, #[unstable(feature = "allocator_api", issue = "32838")] A: All
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T, A: Allocator> MetaUpdate for Vec<T,A>{
-    
+    fn synchronize(&self) {
+        if self.len > self.capacity() {
+            panic!("MetaSafe: Vec's len greater than capacity!");
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

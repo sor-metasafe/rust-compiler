@@ -194,7 +194,9 @@ where
 impl<'a, B: ?Sized + 'a> MetaUpdate for Cow<'a, B> 
 where B: ToOwned
 {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "rust1", since = "1.0.0")]

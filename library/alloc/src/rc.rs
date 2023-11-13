@@ -334,7 +334,9 @@ pub struct Rc<
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T: ?Sized, A: Allocator> MetaUpdate for Rc<T, A> {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "rust1", since = "1.0.0")]
@@ -2709,7 +2711,9 @@ pub struct Weak<
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T: Sized, A: Allocator> MetaUpdate for Weak<T, A> {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "rc_weak", since = "1.4.0")]
@@ -2787,7 +2791,11 @@ struct WeakInner<'a> {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<'a> MetaUpdate for WeakInner<'a> {
-
+    fn synchronize(&self) {
+        if self.weak.get() == 0 && self.strong.get() == 0 {
+            panic!("MetaSafe: WeakInner has both weak and strong == 0!")
+        }
+    }
 }
 
 impl<T: ?Sized> Weak<T> {
@@ -3430,7 +3438,9 @@ pub struct UniqueRc<T> {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T> MetaUpdate for UniqueRc<T> {
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<T> UniqueRc<T> {

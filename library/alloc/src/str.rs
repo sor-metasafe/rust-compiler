@@ -219,7 +219,9 @@ impl ToOwned for str {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl MetaUpdate for str {
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 /// Methods for string slices.

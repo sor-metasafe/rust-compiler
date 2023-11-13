@@ -369,7 +369,9 @@ pub struct String {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl MetaUpdate for String {
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 /// A possible error value when converting a `String` from a UTF-8 byte vector.
@@ -413,7 +415,9 @@ pub struct FromUtf8Error {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl MetaUpdate for FromUtf8Error {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 /// A possible error value when converting a `String` from a UTF-16 byte slice.
@@ -2857,7 +2861,9 @@ pub struct Drain<'a> {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<'a> MetaUpdate for Drain<'a> {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "collection_debug", since = "1.17.0")]

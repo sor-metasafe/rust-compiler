@@ -257,7 +257,9 @@ pub struct Arc<
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T: ?Sized, A: Allocator> MetaUpdate for Arc<T,A> {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "rust1", since = "1.0.0")]
@@ -333,7 +335,9 @@ pub struct Weak<
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T: ?Sized, A: Allocator> MetaUpdate for Weak<T,A>{
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "arc_weak", since = "1.4.0")]
@@ -370,7 +374,9 @@ struct ArcInner<T: ?Sized> {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T: ?Sized> MetaUpdate for ArcInner<T> {
-
+    fn synchronize(&self) {
+        
+    }
 }
 
 /// Calculate layout for `ArcInner<T>` using the inner value's layout

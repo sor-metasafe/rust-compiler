@@ -8,19 +8,5 @@
 pub trait MetaUpdate {
     /// The synchronize function
     /// It panics if the synchronization fails
-    fn synchronize(&self){
-        
-    }
-
-    /// Enables write protection to the metadata region
-    /// By default this uses MPK, but can also use other means
-    /// depending on the architecture
-    fn enable_metadata_write(&self){
-
-    }
-
-    /// Disables write protection to the metadata region
-    fn disable_metadata_write(&self){
-
-    }
+    fn synchronize(&self);
 }

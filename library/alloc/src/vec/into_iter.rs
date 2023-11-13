@@ -49,7 +49,9 @@ pub struct IntoIter<
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T, A: Allocator> MetaUpdate for IntoIter<T, A>{
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "vec_intoiter_debug", since = "1.13.0")]

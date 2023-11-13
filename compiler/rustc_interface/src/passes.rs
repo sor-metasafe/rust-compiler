@@ -35,8 +35,8 @@ use rustc_span::symbol::{sym, Symbol};
 use rustc_span::FileName;
 use rustc_target::spec::PanicStrategy;
 use rustc_trait_selection::traits;
-use rustc_metasafe as metasafe;
-use ast::mut_visit::MutVisitor;
+//use rustc_metasafe as metasafe;
+//use ast::mut_visit::MutVisitor;
 
 use std::any::Any;
 use std::ffi::OsString;
@@ -228,13 +228,13 @@ fn configure_and_expand(
         let mut ecx = ExtCtxt::new(sess, cfg, resolver, Some(&lint_store));
         ecx.num_standard_library_imports = num_standard_library_imports;
         // Expand macros now!
-        let mut krate = sess.time("expand_crate", || ecx.monotonic_expander().expand_crate(krate));
+        let krate = sess.time("expand_crate", || ecx.monotonic_expander().expand_crate(krate));
         //MetaSafe, insert shadow blocks in structs
-        if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
-            let mut metasafe_ast_visitor = metasafe::ast_visitor::AstMutVisitor::new(crate_name.to_string().clone());
-            metasafe_ast_visitor.visit_crate(&mut krate);
-            krate = sess.time("metasafe_expansion", || ecx.monotonic_expander().expand_crate(krate));
-        }
+        // if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
+        //     let mut metasafe_ast_visitor = metasafe::ast_visitor::AstMutVisitor::new(crate_name.to_string().clone());
+        //     metasafe_ast_visitor.visit_crate(&mut krate);
+        //     krate = sess.time("metasafe_expansion", || ecx.monotonic_expander().expand_crate(krate));
+        // }
 
 
         // The rest is error reporting

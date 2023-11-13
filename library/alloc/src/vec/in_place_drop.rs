@@ -12,7 +12,9 @@ pub(super) struct InPlaceDrop<T> {
 
 #[unstable(feature = "metasafe", issue = "none")]
 impl<T> MetaUpdate for InPlaceDrop<T>{
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<T> InPlaceDrop<T> {

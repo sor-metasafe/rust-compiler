@@ -42,7 +42,9 @@ impl<T: fmt::Debug, A: Allocator> fmt::Debug for Drain<'_, T, A> {
 }
 #[unstable(feature = "metasafe", issue = "none")]
 impl<'a, T, A: Allocator> MetaUpdate for Drain<'a, T, A>{
-    
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<'a, T, A: Allocator> Drain<'a, T, A> {
