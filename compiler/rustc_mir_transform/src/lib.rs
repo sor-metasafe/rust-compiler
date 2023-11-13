@@ -532,6 +532,7 @@ fn run_optimization_passes<'tcx>(tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
             &unreachable_prop::UnreachablePropagation,
             &uninhabited_enum_branching::UninhabitedEnumBranching,
             &o1(simplify::SimplifyCfg::AfterUninhabitedEnumBranching),
+            &metasafe_validators::AddMetaSafeValidatorCalls, // MetaSafe, add validators
             &inline::Inline,
             &remove_storage_markers::RemoveStorageMarkers,
             &remove_zsts::RemoveZsts,
