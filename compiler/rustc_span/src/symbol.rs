@@ -963,6 +963,8 @@ symbols! {
         message,
         meta,
         metadata_type,
+        metasafe_shadow_alloc,
+        metasafe_shadow_free,
         min_align_of,
         min_align_of_val,
         min_const_fn,

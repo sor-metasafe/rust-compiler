@@ -253,6 +253,10 @@ language_item_table! {
     DropInPlace,             sym::drop_in_place,       drop_in_place_fn,           Target::Fn,             GenericRequirement::Minimum(1);
     AllocLayout,             sym::alloc_layout,        alloc_layout,               Target::Struct,         GenericRequirement::None;
 
+    /// MetaSafe
+    MetaSafeShadowAlloc,     sym::metasafe_shadow_alloc,   metasafe_shadow_alloc_fn,    Target::Fn,        GenericRequirement::None;
+    MetaSafeShadowFree,      sym::metasafe_shadow_free,    metasafe_shadow_free_fn,     Target::Fn,        GenericRequirement::None;
+
     Start,                   sym::start,               start_fn,                   Target::Fn,             GenericRequirement::Exact(1);
 
     EhPersonality,           sym::eh_personality,      eh_personality,             Target::Fn,             GenericRequirement::None;
