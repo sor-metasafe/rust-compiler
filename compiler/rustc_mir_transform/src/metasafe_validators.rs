@@ -91,18 +91,19 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeValidatorCalls {
                                                 },
                                                 _ => {}
                                             }
-                                        } else {
-                                            panic!("Types don't match1? {} {}", impl_ty.to_string(), arg_ty.to_string());
+                                            continue;
                                         }
-                                    } else {
-                                        let dest_ty = destination.ty(&body.local_decls, tcx).ty;
-                                        if dest_ty.peel_refs().ty_adt_id() == impl_ty.ty_adt_id() {
-                                            let operand = Operand::Copy(*destination);
-                                            validators.insert(idx, (operand, validator, target.clone()));
-                                        } else {
-                                            panic!("Types don't match2? {} {}", impl_ty.to_string(), dest_ty.to_string());
-                                        }
+
                                     }
+
+                                    // So we don't have any args that match ours. Is it possible we are creating a new type of us?
+                                    // If so, then we need to perform a validation for the returned type.
+                                    let dest_ty = destination.ty(&body.local_decls, tcx).ty;
+                                    if dest_ty.peel_refs().ty_adt_id() == impl_ty.ty_adt_id() {
+                                        let operand = Operand::Copy(*destination);
+                                        validators.insert(idx, (operand, validator, target.clone()));
+                                    }
+
                                 } else if tcx.is_smart_pointer(impl_ty) {
                                     panic!("No validator for: {}", impl_ty.to_string());
                                 }
