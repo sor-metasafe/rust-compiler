@@ -461,6 +461,16 @@ pub trait Deref {
     fn deref(&self) -> &Self::Target;
 }
 
+#[lang = "metasafe_shadow_alloc"]
+pub unsafe fn metasafe_shadow_alloc(_size: usize) -> *mut u8 {
+    ptr::null_mut()
+}
+
+#[lang = "metasafe_shadow_free"]
+pub unsafe fn metasafe_shadow_free(_ptr: *mut u8) {
+    //do nothing for now
+}
+
 pub trait Allocator {
 }
 
