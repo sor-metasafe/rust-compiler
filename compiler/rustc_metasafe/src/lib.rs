@@ -13,7 +13,6 @@ use rustc_ast::NodeId;
 use rustc_data_structures::fx::{FxHashSet, FxHashMap};
 
 pub mod hir_analysis;
-//pub mod ast_visitor;
 
 use self::hir_analysis::StructRecord;
 

@@ -672,7 +672,9 @@ pub trait LayoutOf<'tcx>: LayoutOfHelpers<'tcx> {
     fn spanned_layout_of(&self, ty: Ty<'tcx>, span: Span) -> Self::LayoutOfResult {
         let span = if !span.is_dummy() { span } else { self.layout_tcx_at_span() };
         let tcx = self.tcx().at(span);
-
+        if self.tcx().sess.opts.unstable_opts.metaupdate {
+            println!("spanned layout of: {}", ty.to_string());
+        }
         MaybeResult::from(
             tcx.layout_of(self.param_env().and(ty))
                 .map_err(|err| self.handle_layout_err(*err, span, ty)),
@@ -921,8 +923,14 @@ where
                 ty::Adt(def, args) => {
                     match this.variants {
                         Variants::Single { index } => {
-                            let field = &def.variant(index).fields[FieldIdx::from_usize(i)];
-                            TyMaybeWithLayout::Ty(field.ty(tcx, args))
+                            if i == def.variant(index).fields.len() {
+                                //This is MetaSafe messing with things
+                                let typ = Ty::new_ptr(tcx, ty::TypeAndMut { ty: tcx.types.u8, mutbl: rustc_ast::Mutability::Mut });
+                                TyMaybeWithLayout::Ty(typ)
+                            }else {
+                                let field = &def.variant(index).fields[FieldIdx::from_usize(i)];
+                                TyMaybeWithLayout::Ty(field.ty(tcx, args))
+                            }
                         }
 
                         // Discriminant field for enums (where applicable).

@@ -35,79 +35,82 @@ impl<'a> AstMutVisitor<'a> {
 fn visit_expr_inner<'a>(Expr {id, kind, span: _, attrs: _, tokens: _}: &mut Expr, this: &mut AstMutVisitor<'a>) {
     match kind {
         ExprKind::Struct(s) => {
-            if this.special_struct_defs.contains(&id) && !this.except_struct_defs.contains(&id) {
-                let StructExpr {qself: _,fields, path: _, rest: _} = s.deref_mut();
+            let StructExpr {qself: _,fields, path: _, rest: _} = s.deref_mut();
 
-                let array_expr = Expr {
-                    id: DUMMY_NODE_ID,
-                    kind: ExprKind::Repeat(
-                        P(Expr {
+            let array_expr = Expr {
+                id: DUMMY_NODE_ID,
+                kind: ExprKind::Repeat(
+                    P(Expr {
+                        id: DUMMY_NODE_ID,
+                        kind: ExprKind::Lit(ast::token::Lit { kind: ast::token::LitKind::Integer, symbol: Symbol::intern("0"), suffix: None }),
+                        span: DUMMY_SP,
+                        attrs: thin_vec![],
+                        tokens: None
+                    }), AnonConst { id: DUMMY_NODE_ID, value: P(
+                        Expr {
                             id: DUMMY_NODE_ID,
                             kind: ExprKind::Lit(ast::token::Lit { kind: ast::token::LitKind::Integer, symbol: Symbol::intern("0"), suffix: None }),
                             span: DUMMY_SP,
                             attrs: thin_vec![],
                             tokens: None
-                        }), AnonConst { id: DUMMY_NODE_ID, value: P(
-                            Expr {
-                                id: DUMMY_NODE_ID,
-                                kind: ExprKind::Lit(ast::token::Lit { kind: ast::token::LitKind::Integer, symbol: Symbol::intern("0"), suffix: None }),
-                                span: DUMMY_SP,
-                                attrs: thin_vec![],
-                                tokens: None
-                            }
-                        ) }),
-                    span: DUMMY_SP,
-                    attrs: thin_vec![],
-                    tokens: None
-                };
-
-                let expr_field = ExprField {
-                    ident: Ident::from_str("metasafe_box"),
-                    attrs: thin_vec![],
-                    id: DUMMY_NODE_ID,
-                    span: DUMMY_SP,
-                    expr: P(
-                        Expr {
-                            id: DUMMY_NODE_ID,
-                            kind: ExprKind::Call(
-                                P(Expr {
-                                        id: DUMMY_NODE_ID,
-                                        kind: ExprKind::Path(None, ast::Path {
-                                            span: DUMMY_SP,
-                                            segments: thin_vec![
-                                                PathSegment {
-                                                    id: DUMMY_NODE_ID,
-                                                    ident: Ident::from_str("Box"),
-                                                    args: None
-                                                },
-                                                PathSegment {
-                                                    id: DUMMY_NODE_ID,
-                                                    ident: Ident::from_str("new"),
-                                                    args: None
-                                                }
-                                            ],
-                                            tokens: None
-                                        }),
-                                        span: DUMMY_SP,
-                                        attrs: thin_vec![],
-                                        tokens: None
-                                    }
-                                ),
-                                thin_vec![P(array_expr)]),
-                            span: DUMMY_SP,
-                            attrs: thin_vec![],
-                            tokens: None
                         }
-                    ),
-                    is_shorthand: false,
-                    is_placeholder: false,
-                };
+                    ) }),
+                span: DUMMY_SP,
+                attrs: thin_vec![],
+                tokens: None
+            };
 
-                fields.push(expr_field);
-                let expn_id = LocalExpnId::fresh_empty();
-                let fragment = AstFragment::ExprFields(fields); // ::Expr()
-                this.resolver.visit_ast_fragment_with_placeholders(expn_id,&fragment);
-            }
+            let expr_field = ExprField {
+                ident: Ident::from_str("metasafe_shadow_ptr"),
+                attrs: thin_vec![],
+                id: DUMMY_NODE_ID,
+                span: DUMMY_SP,
+                expr: P(
+                    Expr {
+                        id: DUMMY_NODE_ID,
+                        kind: ExprKind::Call(
+                            P(Expr {
+                                    id: DUMMY_NODE_ID,
+                                    kind: ExprKind::Path(None, ast::Path {
+                                        span: DUMMY_SP,
+                                        segments: thin_vec![
+                                            PathSegment {
+                                                id: DUMMY_NODE_ID,
+                                                ident: Ident::from_str("std"),
+                                                args: None
+                                            },
+                                            PathSegment {
+                                                id: DUMMY_NODE_ID,
+                                                ident: Ident::from_str("ptr"),
+                                                args: None
+                                            },
+                                            PathSegment {
+                                                id: DUMMY_NODE_ID,
+                                                ident: Ident::from_str("null_mut")
+                                            }
+                                        ],
+                                        tokens: None
+                                    }),
+                                    span: DUMMY_SP,
+                                    attrs: thin_vec![],
+                                    tokens: None
+                                }
+                            ),
+                            thin_vec![P(array_expr)]),
+                        span: DUMMY_SP,
+                        attrs: thin_vec![],
+                        tokens: None
+                    }
+                ),
+                is_shorthand: false,
+                is_placeholder: false,
+            };
+
+            fields.push(expr_field);
+            let expn_id = LocalExpnId::fresh_empty();
+            let fragment = AstFragment::ExprFields(fields); // ::Expr()
+            this.resolver.visit_ast_fragment_with_placeholders(expn_id,&fragment);
+        
         },
         _ => {}
     }
@@ -121,7 +124,6 @@ impl<'a> MutVisitor for AstMutVisitor<'a> {
                 if self.boxable_structs.contains(id) {
                     if let VariantData::Struct(fields , _) = vdata {
                         let field_id = self.resolver.next_node_id();
-                        self.resolver.create_d
                         let new_field = FieldDef {
                             ident: Some(Ident::from_str("metasafe_box")),
                             attrs: thin_vec![],

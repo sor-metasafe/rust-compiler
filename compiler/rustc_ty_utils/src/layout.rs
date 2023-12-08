@@ -454,7 +454,7 @@ fn layout_of_uncached<'tcx>(
         // ADTs.
         ty::Adt(def, args) => {
             // Cache the field layouts.
-            let variants = def
+            let mut variants = def
                 .variants()
                 .iter()
                 .map(|v| {
@@ -501,6 +501,15 @@ fn layout_of_uncached<'tcx>(
                     let param_env = tcx.param_env(def.did());
                     !tcx.type_of(last_field.did).instantiate_identity().is_sized(tcx, param_env)
                 });
+
+            if tcx.sess.opts.unstable_opts.metaupdate && tcx.contains_smart_pointer(ty) && !maybe_unsized {
+                if def.is_struct() {
+                    variants.iter_mut().for_each(|fields|{
+                        let ptr = cx.layout_of(Ty::new_ptr(tcx, ty::TypeAndMut { ty: tcx.types.u8, mutbl: hir::Mutability::Mut })).unwrap();
+                        fields.push(ptr.layout);
+                    });
+                }
+            }
 
             let Some(layout) = cx.layout_of_struct_or_enum(
                 &def.repr(),
