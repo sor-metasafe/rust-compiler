@@ -3,7 +3,7 @@
 use rustc_middle::{mir::{MirPass, patch::MirPatch, Operand, BasicBlockData, Terminator, SourceInfo, TerminatorKind, Place, START_BLOCK}, ty::{Ty, TyCtxt}};
 
 
-struct AddMetaSafeShadows;
+pub struct AddMetaSafeShadows;
 
 impl<'tcx> MirPass<'tcx> for AddMetaSafeShadows {
     fn is_enabled(&self, _sess: &rustc_session::Session) -> bool {

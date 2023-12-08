@@ -11,7 +11,7 @@ edition = "2021"
 [dependencies]
 core = { path = "../core" }
 compiler_builtins = { version = "0.1.40", features = ['rustc-dep-of-std'] }
-libc = "0.2.45"
+
 
 [dev-dependencies]
 rand = { version = "0.8.5", default-features = false, features = ["alloc"] }

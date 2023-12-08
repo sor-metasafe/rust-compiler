@@ -522,27 +522,27 @@ pub(super) fn is_smart_pointer<'tcx>(tcx: TyCtxt<'tcx>, def_ty: Ty<'tcx>) -> boo
         return true;
     }
 
-    let metaupdate_trait_id = tcx.metasafe_metaupdate_trait_id(()).unwrap();
-
-    if let ty::Adt(adt_def, generics) = def_ty.kind() {
-        let def_id = adt_def.did();
-        for impl_id in tcx.all_impls(metaupdate_trait_id) {
-            if let Some(trait_ref) = tcx.impl_trait_ref(impl_id).map(EarlyBinder::instantiate_identity) {
-                if let Some(adt) = trait_ref.self_ty().ty_adt_def() {
-                    if adt.did() == def_id {
-                        return true;
+    if let Some(metaupdate_trait_id) = tcx.metasafe_metaupdate_trait_id(()) {
+        if let ty::Adt(adt_def, generics) = def_ty.kind() {
+            let def_id = adt_def.did();
+            for impl_id in tcx.all_impls(metaupdate_trait_id) {
+                if let Some(trait_ref) = tcx.impl_trait_ref(impl_id).map(EarlyBinder::instantiate_identity) {
+                    if let Some(adt) = trait_ref.self_ty().ty_adt_def() {
+                        if adt.did() == def_id {
+                            return true;
+                        }
                     }
                 }
             }
-        }
 
-        for field in adt_def.all_fields() {
-            if !is_smart_pointer(tcx, field.ty(tcx, &generics)) {
-                return false;
+            for field in adt_def.all_fields() {
+                if !is_smart_pointer(tcx, field.ty(tcx, &generics)) {
+                    return false;
+                }
             }
-        }
 
-        return true;
+            return true;
+        }
     }
 
     false

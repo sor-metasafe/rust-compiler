@@ -128,6 +128,7 @@ fn lang_start_internal(
     argv: *const *const u8,
     sigpipe: u8,
 ) -> Result<isize, !> {
+
     use crate::{mem, panic};
     let rt_abort = move |e| {
         mem::forget(e);

@@ -425,6 +425,9 @@ mod macros;
 #[macro_use]
 pub mod rt;
 
+#[unstable(feature = "metasafe", issue = "none")]
+pub mod metasafe;
+
 // The Rust prelude
 pub mod prelude;
 

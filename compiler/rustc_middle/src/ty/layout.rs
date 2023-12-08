@@ -672,9 +672,6 @@ pub trait LayoutOf<'tcx>: LayoutOfHelpers<'tcx> {
     fn spanned_layout_of(&self, ty: Ty<'tcx>, span: Span) -> Self::LayoutOfResult {
         let span = if !span.is_dummy() { span } else { self.layout_tcx_at_span() };
         let tcx = self.tcx().at(span);
-        if self.tcx().sess.opts.unstable_opts.metaupdate {
-            println!("spanned layout of: {}", ty.to_string());
-        }
         MaybeResult::from(
             tcx.layout_of(self.param_env().and(ty))
                 .map_err(|err| self.handle_layout_err(*err, span, ty)),
