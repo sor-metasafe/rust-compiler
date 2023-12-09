@@ -16,9 +16,6 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeShadows {
             if def_id == main_did && def_id.is_local() {
                 //let's find the first statement and call init the shadow memory
                 let mut patch = MirPatch::new(body);
-                let bbs = &body.basic_blocks;
-                let entry_block = bbs.get(START_BLOCK).unwrap();
-                let mut orig_terminator = entry_block.terminator().kind.clone();
                 let temp = Place::from(patch.new_temp(Ty::new_unit(tcx), body.span));
                 let shadow_function = Operand::function_handle(tcx, tcx.require_lang_item(rustc_hir::LangItem::MetaSafeShadowAlloc, None), [], body.span);
                 //let bbs = &body.basic_blocks;
@@ -30,7 +27,7 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeShadows {
                             func: shadow_function, 
                             args: vec![], 
                             destination: temp, 
-                            target: Some(START_BLOCK), 
+                            target: None, 
                             unwind: rustc_middle::mir::UnwindAction::Continue, 
                             call_source: rustc_middle::mir::CallSource::Misc, 
                             fn_span: body.span }
@@ -38,11 +35,17 @@ impl<'tcx> MirPass<'tcx> for AddMetaSafeShadows {
                     is_cleanup: false
                 };
                 let block = patch.new_block(block_data);
-                if let TerminatorKind::Call { target,.. } = &mut orig_terminator {
-                    *target = Some(block);
-                }
-                patch.patch_terminator(START_BLOCK, orig_terminator);
                 patch.apply(body);
+
+                let bbs = body.basic_blocks_mut();
+                if bbs.len() > 1 {
+                    bbs.swap(START_BLOCK, block);
+                    let entry = bbs.get_mut(START_BLOCK).unwrap();
+                    let terminator = entry.terminator_mut();
+                    if let TerminatorKind::Call { target, ..} = &mut terminator.kind {
+                        target.replace(block);
+                    }
+                }
             }
         }
     }
