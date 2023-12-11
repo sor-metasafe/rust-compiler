@@ -12,7 +12,19 @@ const SHADOW_SIZE: usize = 0x20000000000;
 /// Allocate the shadow memory for MetaSafe
 pub unsafe fn metasafe_shadow_alloc() {
     let addr = core::ptr::from_exposed_addr_mut(SHADOW_ADDR);
-    if libc::mmap(addr, SHADOW_SIZE, libc::PROT_READ|libc::PROT_WRITE,libc::MAP_PRIVATE|libc::MAP_NORESERVE|libc::MAP_ANON, -1, 0) == libc::MAP_FAILED {
+    if libc::mmap(
+        addr,
+        SHADOW_SIZE,
+        libc::PROT_READ | libc::PROT_WRITE,
+        libc::MAP_PRIVATE | libc::MAP_NORESERVE | libc::MAP_ANON,
+        -1,
+        0,
+    ) == libc::MAP_FAILED
+    {
         panic!("MetaSafe: failed to create shadow memory");
     }
 }
+
+#[cfg(not(bootstrap))]
+#[lang = "metasafe_extern_stack_run"]
+pub unsafe fn metasafe_extern_stack_run<R>(fun: FnOnce) -> R {}

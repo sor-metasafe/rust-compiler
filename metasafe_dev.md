@@ -24,4 +24,10 @@ This analysis will only be done locally. We can't really afford inter-procedural
 # Analysis: Relevant places:
 - Rustc borrow:
     > Liveness (rustc_borrow)
-    > 
+
+
+## Integration with TRust:
+To integrate MetaSafe with TRust, we need to see the following are accomplished:
+    > External functions run on an a separate stack. For this, we wrap external functions like the stacker crate does. Except that, different from the stacker crate, we don't want to mmap a new stack every time an external fuction is called, rather, we will mmap an initial stack at once, set the libc::MAP_STACK option, and reuse this stack forever. Of course, once the function returns, we would have to create another stack. 
+    > Create two more stacks; one for the smart pointers, the other for unsafe objects from TRust. Following this requirement, we hook the pthread function as in TRust and SafeStack to ensure these stacks always exist.
+    > Perform pointer-to-analysis (PTA) to isolate unsafe objects from safe ones. TRust uses SVF, but we will avoid that and run MIR analysis. This is all work btw! I'm not sure Prof. Moon will approve as this sounds like too much work for a major revision, but we have to do it.
