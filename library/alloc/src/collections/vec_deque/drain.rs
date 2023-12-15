@@ -4,6 +4,8 @@ use core::mem::{self, SizedTypeProperties};
 use core::ptr::NonNull;
 use core::{fmt, ptr};
 
+use alloc::metasafe::MetaUpdate;
+
 use crate::alloc::{Allocator, Global};
 
 use super::VecDeque;
@@ -32,6 +34,12 @@ pub struct Drain<
     remaining: usize,
     // Needed to make Drain covariant over T
     _marker: PhantomData<&'a T>,
+}
+
+impl<'a, T: 'a, A: Allocator> MetaUpdate for Drain<'a, T, A> {
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<'a, T, A: Allocator> Drain<'a, T, A> {

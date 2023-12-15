@@ -3,6 +3,8 @@ use core::num::NonZeroUsize;
 use core::ops::Try;
 use core::{fmt, mem, slice};
 
+use alloc::metasafe::MetaUpdate;
+
 /// An iterator over the elements of a `VecDeque`.
 ///
 /// This `struct` is created by the [`iter`] method on [`super::VecDeque`]. See its
@@ -13,6 +15,12 @@ use core::{fmt, mem, slice};
 pub struct Iter<'a, T: 'a> {
     i1: slice::Iter<'a, T>,
     i2: slice::Iter<'a, T>,
+}
+
+impl<'a, T: 'a> MetaUpdate for Iter<'a, T> {
+    fn synchronize(&self) {
+        
+    }
 }
 
 impl<'a, T> Iter<'a, T> {

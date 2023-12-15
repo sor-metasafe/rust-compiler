@@ -1,18 +1,22 @@
-use ast::{ Expr, ExprKind, Closure, FnDecl};
-use rustc_ast::{
-    self as ast, mut_visit::MutVisitor, ptr::P, NodeId,
-};
+use ast::{Closure, Expr, ExprKind, FnDecl};
+use rustc_ast::{self as ast, mut_visit::MutVisitor, ptr::P, NodeId};
 use rustc_data_structures::fx::FxHashSet;
-use rustc_expand::{base::{ResolverExpand, ExtCtxt}, expand::{ExpansionConfig, AstFragment}};
-use rustc_session::Session;
+use rustc_expand::{
+    base::{ExtCtxt, ResolverExpand},
+    expand::{AstFragment, ExpansionConfig},
+};
 use rustc_feature::Features;
-use rustc_span::{symbol::{sym, Ident}, DUMMY_SP};
+use rustc_session::Session;
+use rustc_span::{
+    symbol::{sym, Ident},
+    DUMMY_SP,
+};
 //use smallvec::{smallvec, SmallVec};
 //use std::ops::DerefMut;
 use thin_vec::{thin_vec, ThinVec};
 
 use crate::load_extern_calls;
-/* 
+/*
 pub struct AstMutVisitor<'a> {
     boxable_structs: FxHashSet<NodeId>,
     special_struct_defs: FxHashSet<NodeId>,
@@ -230,41 +234,48 @@ pub fn wrap_extern_calls(
     sess: &Session,
     resolver: &mut dyn ResolverExpand,
     crate_name: String,
-    features: &Features
+    features: &Features,
 ) {
     struct ExternCallVisitor<'a> {
         extern_calls: FxHashSet<NodeId>,
-        ext_cx: ExtCtxt<'a>
+        ext_cx: ExtCtxt<'a>,
     }
 
     impl<'a> MutVisitor for ExternCallVisitor<'a> {
-        fn visit_expr(&mut self, expr: &mut P<Expr>){
+        fn visit_expr(&mut self, expr: &mut P<Expr>) {
             let id = expr.id;
-            if self.extern_calls.contains(&id){
+            if self.extern_calls.contains(&id) {
                 let local_expr = expr.clone();
-                let closure = self.ext_cx.expr(expr.span, ExprKind::Closure(
-                    Box::new(Closure {
-                       binder: ast::ClosureBinder::NotPresent,
-                       capture_clause: ast::CaptureBy::Ref,
-                       constness: ast::Const::No,
-                       asyncness: ast::Async::No,
-                       movability: ast::Movability::Movable,
-                       fn_decl: P(
-                        FnDecl {
+                let closure = self.ext_cx.expr(
+                    expr.span,
+                    ExprKind::Closure(Box::new(Closure {
+                        binder: ast::ClosureBinder::NotPresent,
+                        capture_clause: ast::CaptureBy::Ref,
+                        constness: ast::Const::No,
+                        asyncness: ast::Async::No,
+                        movability: ast::Movability::Movable,
+                        fn_decl: P(FnDecl {
                             inputs: ThinVec::new(),
-                            output: ast::FnRetTy::Default(DUMMY_SP)
-                        }
-                       ),
-                       body: local_expr,
-                       fn_decl_span: expr.span,
-                       fn_arg_span: expr.span
-                    })
-                ));
-                let wrapper_fn = self.ext_cx.path(expr.span,  vec![Ident::from_str("std"), Ident::from_str("metasafe"), Ident::with_dummy_span(sym::metasafe_extern_stack_run)]);
+                            output: ast::FnRetTy::Default(DUMMY_SP),
+                        }),
+                        body: local_expr,
+                        fn_decl_span: expr.span,
+                        fn_arg_span: expr.span,
+                    })),
+                );
+                let wrapper_fn = self.ext_cx.path(
+                    expr.span,
+                    vec![
+                        Ident::from_str("std"),
+                        Ident::from_str("metasafe"),
+                        Ident::with_dummy_span(sym::metasafe_extern_stack_run),
+                    ],
+                );
                 let expr_path = self.ext_cx.expr_path(wrapper_fn);
                 let wrapper_call = self.ext_cx.expr_call(expr.span, expr_path, thin_vec![closure]);
                 let wrapper_call_frag = AstFragment::Expr(wrapper_call);
-                let wrapper_call = self.ext_cx.expander().fully_expand_fragment(wrapper_call_frag).make_expr();
+                let wrapper_call =
+                    self.ext_cx.expander().fully_expand_fragment(wrapper_call_frag).make_expr();
                 let _ = std::mem::replace(expr, wrapper_call);
             }
         }
@@ -274,12 +285,10 @@ pub fn wrap_extern_calls(
     if extern_calls.is_empty() {
         return;
     }
- 
+
     let econfig = ExpansionConfig::default(crate_name, features);
     let ext_cx = ExtCtxt::new(&sess, econfig, resolver, None);
-    let mut extern_call_visitor = ExternCallVisitor {
-        extern_calls,
-        ext_cx
-    };
+    let mut extern_call_visitor = ExternCallVisitor { extern_calls, ext_cx };
     extern_call_visitor.visit_crate(krate);
 }
+

@@ -20,6 +20,8 @@ use core::marker::PhantomData;
 use core::mem;
 use core::ptr::NonNull;
 
+use alloc::metasafe::MetaUpdate;
+
 use super::SpecExtend;
 use crate::alloc::{Allocator, Global};
 use crate::boxed::Box;
@@ -59,10 +61,24 @@ pub struct LinkedList<
     marker: PhantomData<Box<Node<T>, A>>,
 }
 
+impl<T, A> MetaUpdate for LinkedList<T, A> {
+    fn synchronize(&self) {
+        if self.len != 0 && self.head.is_none() {
+            panic!("MetaSafe: LinkedList has no head but its length > 0");
+        }
+    }
+}
+
 struct Node<T> {
     next: Option<NonNull<Node<T>>>,
     prev: Option<NonNull<Node<T>>>,
     element: T,
+}
+
+impl<T> MetaUpdate for Node<T> {
+    fn synchronize(&self) {
+        
+    }
 }
 
 /// An iterator over the elements of a `LinkedList`.
@@ -91,6 +107,14 @@ impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
             }))
             .field(&self.len)
             .finish()
+    }
+}
+
+impl<'a, T: 'a> MetaUpdate for Iter<'a, T> {
+    fn synchronize(&self) {
+        if self.head.is_none() && self.len != 0{
+            panic!("MetaSafe: Iter has len != 0 but no head");
+        }
     }
 }
 
@@ -144,6 +168,12 @@ pub struct IntoIter<
     #[unstable(feature = "allocator_api", issue = "32838")] A: Allocator = Global,
 > {
     list: LinkedList<T, A>,
+}
+
+impl<T, A> MetaUpdate for IntoIter<T,A> {
+    fn synchronize(&self) {
+        
+    }
 }
 
 #[stable(feature = "collection_debug", since = "1.17.0")]

@@ -22,6 +22,8 @@ use core::slice;
 #[allow(unused_imports)]
 use core::mem;
 
+use alloc::metasafe::MetaUpdate;
+
 use crate::alloc::{Allocator, Global};
 use crate::collections::TryReserveError;
 use crate::collections::TryReserveErrorKind;
@@ -558,6 +560,14 @@ impl<T> VecDeque<T> {
     #[must_use]
     pub fn with_capacity(capacity: usize) -> VecDeque<T> {
         Self::with_capacity_in(capacity, Global)
+    }
+}
+
+impl<T, A> MetaUpdate for VecDeque<T, A> {
+    fn synchronize(&self) {
+        if self.len > self.buf.capacity() {
+            panic!("MetaSafe: VecDeque has large length than capacity");
+        }
     }
 }
 
