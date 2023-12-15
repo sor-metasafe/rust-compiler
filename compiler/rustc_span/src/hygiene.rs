@@ -1121,6 +1121,7 @@ pub enum AstPass {
     StdImports,
     TestHarness,
     ProcMacroHarness,
+    //MetaSafeExternCallWrappers,
 }
 
 impl AstPass {
@@ -1129,6 +1130,7 @@ impl AstPass {
             AstPass::StdImports => "standard library imports",
             AstPass::TestHarness => "test harness",
             AstPass::ProcMacroHarness => "proc macro harness",
+            //AstPass::MetaSafeExternCallWrappers => "metasafe extern call wrappers"
         }
     }
 }

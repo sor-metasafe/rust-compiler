@@ -25,6 +25,10 @@ pub unsafe fn metasafe_shadow_alloc() {
     }
 }
 
+
 #[cfg(not(bootstrap))]
-#[lang = "metasafe_extern_stack_run"]
-pub unsafe fn metasafe_extern_stack_run<R>(fun: FnOnce) -> R {}
+//#[lang = "metasafe_extern_stack_run"]
+/// Run the given routine on a separate stack.
+pub unsafe fn metasafe_extern_stack_run<R, F: FnOnce() -> R>(fun: F) -> R {
+    fun()
+}

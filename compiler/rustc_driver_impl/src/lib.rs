@@ -229,16 +229,19 @@ impl Callbacks for TimePassesCallbacks {
     // }
 
     fn after_analysis<'tcx>(
-            &mut self,
-            _handler: &EarlyErrorHandler,
-            _compiler: &interface::Compiler,
-            queries: &'tcx Queries<'tcx>,
-        ) -> Compilation {
+        &mut self,
+        _handler: &EarlyErrorHandler,
+        _compiler: &interface::Compiler,
+        queries: &'tcx Queries<'tcx>,
+    ) -> Compilation {
         let mut ctxt_result = queries.global_ctxt().unwrap();
-        ctxt_result.enter(|tcx|{
+        ctxt_result.enter(|tcx| {
             let _ = tcx.analysis(());
-            if tcx.sess.opts.unstable_opts.metaupdate && tcx.sess.opts.unstable_opts.metaupdate_analysis {
+            if tcx.sess.opts.unstable_opts.metaupdate
+                && tcx.sess.opts.unstable_opts.metaupdate_analysis
+            {
                 metasafe::hir_analysis::run_metasafe_analysis_stage(tcx);
+                metasafe::pta::callgraph::CallGraph::build(tcx).print_to_file();
             }
         });
         Compilation::Continue

@@ -963,6 +963,7 @@ symbols! {
         message,
         meta,
         metadata_type,
+        metasafe_extern_stack_run,
         metasafe_shadow_alloc,
         metasafe_shadow_free,
         min_align_of,

@@ -13,6 +13,8 @@ use rustc_ast::NodeId;
 use rustc_data_structures::fx::{FxHashSet, FxHashMap};
 
 pub mod hir_analysis;
+pub mod pta;
+//pub mod ast_visitor;
 
 use self::hir_analysis::StructRecord;
 
@@ -20,11 +22,11 @@ use self::hir_analysis::StructRecord;
 pub struct AnalysisRecords {
     pub structs: FxHashSet<NodeId>,
     pub struct_defs: FxHashSet<NodeId>,
-    pub except_defs: FxHashSet<NodeId>
+    pub except_defs: FxHashSet<NodeId>,
 }
 
-pub fn load_analysis(crate_name: String) -> AnalysisRecords {
-    let path = Path::new("/tmp/metasafe/analysis.json");
+pub fn load_struct_records_analysis(crate_name: String) -> AnalysisRecords {
+    let path = Path::new("/tmp/metasafe/struct_records.json");
     if path.exists() {
         let file =  File::open(path).unwrap();
         let reader = BufReader::new(file);
@@ -72,3 +74,21 @@ pub fn load_analysis(crate_name: String) -> AnalysisRecords {
         }
     }
 }
+
+/* 
+fn load_extern_calls(crate_name: String) -> FxHashSet<NodeId> {
+    let path = Path::new("/tmp/metasafe/extern_calls.json");
+    let mut extern_call_ids = FxHashSet::default();
+    if path.exists() {
+        let file = File::open(path).unwrap();
+        let buf_reader = BufReader::new(file);
+        let extern_calls: FxHashMap<String, FxHashSet<u32>> = serde_json::from_reader(buf_reader).unwrap();
+        if let Some(set) = extern_calls.get(&crate_name) {
+            for id in set {
+                extern_call_ids.insert(NodeId::from_u32(*id));
+            }
+        }
+    }
+
+    extern_call_ids
+}*/

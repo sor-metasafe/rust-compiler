@@ -229,12 +229,6 @@ fn configure_and_expand(
         ecx.num_standard_library_imports = num_standard_library_imports;
         // Expand macros now!
         let krate = sess.time("expand_crate", || ecx.monotonic_expander().expand_crate(krate));
-        //MetaSafe, insert shadow blocks in structs
-        // if sess.opts.unstable_opts.metaupdate && !sess.opts.unstable_opts.metaupdate_analysis {
-        //     let mut metasafe_ast_visitor = metasafe::ast_visitor::AstMutVisitor::new(crate_name.to_string().clone());
-        //     metasafe_ast_visitor.visit_crate(&mut krate);
-        //     krate = sess.time("metasafe_expansion", || ecx.monotonic_expander().expand_crate(krate));
-        // }
 
 
         // The rest is error reporting
